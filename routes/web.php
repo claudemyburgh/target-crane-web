@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Frontend\HomeIndexController;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
 Route::get('/', HomeIndexController::class)->name('home');
 

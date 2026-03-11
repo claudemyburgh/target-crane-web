@@ -6,6 +6,7 @@ import {
     Gauge,
     LayoutGrid,
     Shield,
+    Truck,
     User,
     Users,
 } from 'lucide-react';
@@ -29,6 +30,7 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { dashboard } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
 import { index as adminUsersIndex } from '@/routes/admin/users';
+import { index as trailersIndex } from '@/routes/admin/trailers';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
 import {
@@ -81,6 +83,11 @@ export function AppSidebar() {
                       title: 'Users',
                       href: adminUsersIndex(),
                       icon: Users,
+                  },
+                  {
+                      title: 'Trailers',
+                      href: trailersIndex(),
+                      icon: Truck,
                   },
               ]
             : mainNavItemsBase;

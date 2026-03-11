@@ -47,52 +47,40 @@ export default function AdminDashboard({
                         title="Users"
                         value={stats.users}
                         icon={Users}
-                        isLoading={!stats.users_series}
-                        chartData={stats.users_series?.series ?? []}
-                        chartWidth={220}
-                        chartHeight={52}
-                        trendPercent={stats.users_series?.trend_percent ?? null}
-                        trendLabel="vs last 14 days"
-                        gradientClassName="from-emerald-500/20 via-emerald-500/10 to-transparent"
+                        trend={stats.users_series ? {
+                            value: stats.users_series.trend_percent,
+                            label: "vs last 14 days"
+                        } : undefined}
                     />
 
                     <StatSimple
                         title="Active Users"
                         value={stats.active_users?.value ?? 0}
                         icon={Activity}
-                        isLoading={!stats.active_users}
-                        chartData={stats.active_users?.series ?? []}
-                        chartWidth={220}
-                        chartHeight={52}
-                        trendPercent={stats.active_users?.trend_percent ?? null}
-                        trendLabel="vs last 14 days"
-                        gradientClassName="from-indigo-500/20 via-indigo-500/10 to-transparent"
+                        trend={stats.active_users ? {
+                            value: stats.active_users.trend_percent,
+                            label: "vs last 14 days"
+                        } : undefined}
                     />
 
                     <StatSimple
                         title="Roles"
                         value={stats.roles}
                         icon={Shield}
-                        isLoading={!stats.roles_series}
-                        chartData={stats.roles_series?.series ?? []}
-                        chartWidth={220}
-                        chartHeight={52}
-                        trendPercent={stats.roles_series?.trend_percent ?? null}
-                        trendLabel="vs last 14 days"
-                        gradientClassName="from-amber-500/20 via-amber-500/10 to-transparent"
+                        trend={stats.roles_series ? {
+                            value: stats.roles_series.trend_percent,
+                            label: "vs last 14 days"
+                        } : undefined}
                     />
 
                     <StatSimple
                         title="Permissions"
                         value={stats.permissions}
                         icon={KeyRound}
-                        isLoading={!stats.permissions_series}
-                        chartData={stats.permissions_series?.series ?? []}
-                        chartWidth={220}
-                        chartHeight={52}
-                        trendPercent={stats.permissions_series?.trend_percent ?? null}
-                        trendLabel="vs last 14 days"
-                        gradientClassName="from-violet-500/20 via-violet-500/10 to-transparent"
+                        trend={stats.permissions_series ? {
+                            value: stats.permissions_series.trend_percent,
+                            label: "vs last 14 days"
+                        } : undefined}
                     />
                 </div>
                 <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">
