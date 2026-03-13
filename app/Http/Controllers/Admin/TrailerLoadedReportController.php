@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TrailerLoadedReportFormRequest;
+use App\Models\Trailer;
 use App\Models\TrailerLoadedReport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -58,7 +59,11 @@ class TrailerLoadedReportController extends Controller
     {
         $this->authorize('create', TrailerLoadedReport::class);
 
-        return Inertia::render('admin/trailer-loaded-reports/create');
+        $trailers = Trailer::orderBy('fleet_number')->get(['id', 'fleet_number', 'registration_number']);
+
+        return Inertia::render('admin/trailer-loaded-reports/create', [
+            'trailers' => $trailers,
+        ]);
     }
 
     public function store(TrailerLoadedReportFormRequest $request)

@@ -6,12 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 import { index, store } from '@/routes/admin/trailer-loaded-reports';
 import type { BreadcrumbItem } from '@/types';
 
 type LoadItem = {
+    trailer_id: string;
     fleet_number: string;
     registration_number: string;
     loaded: string;
@@ -19,30 +27,51 @@ type LoadItem = {
     comment: string;
 };
 
-export default function CreateTrailerLoadedReport() {
+type Trailer = {
+    id: number;
+    fleet_number: string;
+    registration_number: string;
+};
+
+interface Props {
+    trailers: Trailer[];
+}
+
+export default function CreateTrailerLoadedReport({ trailers }: Props) {
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [date, setDate] = React.useState(() => {
         const today = new Date();
         return today.toISOString().split('T')[0];
     });
 
-    const initialLoads: LoadItem[] = [
-        {
-            fleet_number: '',
-            registration_number: '',
-            loaded: '',
-            location: '',
-            comment: '',
-        },
-    ];
+    const initialLoads: LoadItem[] = trailers.map((trailer) => ({
+        trailer_id: trailer.id.toString(),
+        fleet_number: trailer.fleet_number,
+        registration_number: trailer.registration_number,
+        loaded: '',
+        location: '',
+        comment: '',
+    }));
 
     const [loads, setLoads] = React.useState<LoadItem[]>(initialLoads);
     const [errors, setErrors] = React.useState<Record<string, string>>({});
+
+    const getAvailableTrailers = (currentIndex: number) => {
+        const selectedTrailerIds = loads
+            .map((load, index) =>
+                index !== currentIndex ? load.trailer_id : null,
+            )
+            .filter(Boolean);
+        return trailers.filter(
+            (t) => !selectedTrailerIds.includes(t.id.toString()),
+        );
+    };
 
     const addRow = () => {
         setLoads([
             ...loads,
             {
+                trailer_id: '',
                 fleet_number: '',
                 registration_number: '',
                 loaded: '',
@@ -56,6 +85,18 @@ export default function CreateTrailerLoadedReport() {
         if (loads.length > 1) {
             setLoads(loads.filter((_, i) => i !== index));
         }
+    };
+
+    const handleTrailerSelect = (index: number, trailerId: string) => {
+        const trailer = trailers.find((t) => t.id.toString() === trailerId);
+        const newLoads = [...loads];
+        newLoads[index] = {
+            ...newLoads[index],
+            trailer_id: trailerId,
+            fleet_number: trailer?.fleet_number || '',
+            registration_number: trailer?.registration_number || '',
+        };
+        setLoads(newLoads);
     };
 
     const updateLoad = (
@@ -72,6 +113,15 @@ export default function CreateTrailerLoadedReport() {
         e.preventDefault();
         setIsSubmitting(true);
         setErrors({});
+
+        const missingTrailer = loads.some((load) => !load.trailer_id);
+        if (missingTrailer) {
+            setErrors({
+                'loads.0.trailer_id': 'Please select a trailer for each row',
+            });
+            setIsSubmitting(false);
+            return;
+        }
 
         const formattedLoads = loads.map((load) => ({
             fleet_number: load.fleet_number,
@@ -182,28 +232,49 @@ export default function CreateTrailerLoadedReport() {
                                     </thead>
                                     <tbody>
                                         {loads.map((load, index) => {
+                                            const availableTrailers =
+                                                getAvailableTrailers(index);
                                             return (
                                                 <tr
                                                     key={index}
                                                     className="border-b"
                                                 >
                                                     <td className="px-4 py-3">
-                                                        <Input
+                                                        <Select
                                                             value={
-                                                                load.fleet_number
+                                                                load.trailer_id
                                                             }
-                                                            onChange={(e) =>
-                                                                updateLoad(
+                                                            onValueChange={(
+                                                                value,
+                                                            ) =>
+                                                                handleTrailerSelect(
                                                                     index,
-                                                                    'fleet_number',
-                                                                    e.target
-                                                                        .value,
+                                                                    value,
                                                                 )
                                                             }
-                                                            placeholder="Fleet #"
-                                                            required
-                                                            className="h-8 w-32"
-                                                        />
+                                                        >
+                                                            <SelectTrigger className="h-8 w-40">
+                                                                <SelectValue placeholder="Select fleet #" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {availableTrailers.map(
+                                                                    (
+                                                                        trailer,
+                                                                    ) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                trailer.id
+                                                                            }
+                                                                            value={trailer.id.toString()}
+                                                                        >
+                                                                            {
+                                                                                trailer.fleet_number
+                                                                            }
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <Input
@@ -219,7 +290,6 @@ export default function CreateTrailerLoadedReport() {
                                                                 )
                                                             }
                                                             placeholder="Reg #"
-                                                            required
                                                             className="h-8 w-32"
                                                         />
                                                     </td>
