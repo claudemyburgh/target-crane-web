@@ -23,7 +23,7 @@ class BulkActionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'action' => ['required', 'string', 'in:delete,restore,ban,unban,assign-role'],
+            'action' => ['required', 'string', 'in:delete,restore,ban,unban,assign-role,reorder'],
             'ids' => ['required', 'array'],
             'ids.*' => ['integer', 'exists:users,id'],
             'role' => ['required_if:action,assign-role', 'nullable', 'string', 'exists:roles,name'],

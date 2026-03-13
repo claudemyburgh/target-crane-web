@@ -133,7 +133,7 @@ export function DataTable<T extends { id: number }>({
                 const [movedItem] = newItems.splice(oldIndex, 1);
                 newItems.splice(newIndex, 0, movedItem);
 
-                if (bulkRoute && onReorder) {
+                if (bulkRoute) {
                     const orderedIds = newItems.map((item) => item.id);
                     router.post(
                         bulkRoute() as string,
