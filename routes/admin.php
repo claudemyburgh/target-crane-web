@@ -23,19 +23,22 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->as('admin.')->group(fu
     Route::post('trailers/{trailer}/restore', [TrailerController::class, 'restore'])->name('trailers.restore');
     Route::delete('trailers/{trailer}/force-delete', [TrailerController::class, 'forceDelete'])->name('trailers.force-delete');
     Route::post('trailers/bulk', [TrailerController::class, 'bulk'])->name('trailers.bulk');
-
-    // Trailer Loaded Reports - all authenticated users can view
-    Route::get('trailer-loaded-reports', [TrailerLoadedReportController::class, 'index'])->name('trailer-loaded-reports.index');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admin.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', DashboardAdminController::class)->name('dashboard');
 
-    // Trailer Loaded Reports - admin only for create/delete
+    // Trailer Loaded Reports - admin only routes (must be before parameterized routes)
     Route::get('trailer-loaded-reports/create', [TrailerLoadedReportController::class, 'create'])->name('trailer-loaded-reports.create');
     Route::post('trailer-loaded-reports', [TrailerLoadedReportController::class, 'store'])->name('trailer-loaded-reports.store');
+    Route::get('trailer-loaded-reports/{trailerLoadedReport}/edit', [TrailerLoadedReportController::class, 'edit'])->name('trailer-loaded-reports.edit');
+    Route::put('trailer-loaded-reports/{trailerLoadedReport}', [TrailerLoadedReportController::class, 'update'])->name('trailer-loaded-reports.update');
     Route::delete('trailer-loaded-reports/{trailerLoadedReport}', [TrailerLoadedReportController::class, 'destroy'])->name('trailer-loaded-reports.destroy');
 
-    Route::get('/dashboard', DashboardAdminController::class)->name('dashboard');
+    // Trailer Loaded Reports - all authenticated users can view (in admin group but without extra middleware)
+    Route::get('trailer-loaded-reports', [TrailerLoadedReportController::class, 'index'])->name('trailer-loaded-reports.index');
+    Route::get('trailer-loaded-reports/{trailerLoadedReport}', [TrailerLoadedReportController::class, 'show'])->name('trailer-loaded-reports.show');
 
     Route::resource('users', UserAdminController::class);
     Route::post('users/{user}/restore', [UserAdminController::class, 'restore'])->name('users.restore');

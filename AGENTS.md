@@ -125,6 +125,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 - Use appropriate PHP type hints for method parameters.
 
 <!-- Explicit Return Types and Method Params -->
+
 ```php
 protected function isAccessible(User $user, ?string $path = null): bool
 {
@@ -245,6 +246,7 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 Wayfinder generates TypeScript functions for Laravel routes. Import from `@/actions/` (controllers) or `@/routes/` (named routes).
 
+- IMPORTANT: ALWAYS use Wayfinder routes or actions instead of hardcoded URLs. Never use strings like `/admin/trailer-loaded-reports` - always use the generated route functions like `index()` or `edit({ trailerLoadedReport: 1 })`.
 - IMPORTANT: Activate `wayfinder-development` skill whenever referencing backend routes in frontend components.
 - Invokable Controllers: `import StorePost from '@/actions/.../StorePostController'; StorePost()`.
 - Parameter Binding: Detects route keys (`{post:slug}`) — `show({ slug: "my-post" })`.

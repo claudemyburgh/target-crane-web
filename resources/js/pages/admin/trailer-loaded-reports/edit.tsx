@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/tooltip';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
-import { index, store } from '@/routes/admin/trailer-loaded-reports';
+import { index, update } from '@/routes/admin/trailer-loaded-reports';
 import type { BreadcrumbItem } from '@/types';
 
 type LoadItem = {
@@ -50,22 +50,36 @@ type Trailer = {
     registration_number: string;
 };
 
+type Report = {
+    id: number;
+    date: string;
+    loads: LoadItem[];
+};
+
 interface Props {
+    report: Report;
     trailers: Trailer[];
 }
 
-export default function CreateTrailerLoadedReport({ trailers }: Props) {
+export default function EditTrailerLoadedReport({ report, trailers }: Props) {
     const [isSubmitting, setIsSubmitting] = React.useState(false);
-    const [date, setDate] = React.useState<Date>(new Date());
+    const [date, setDate] = React.useState<Date>(new Date(report.date));
 
-    const initialLoads: LoadItem[] = trailers.map((trailer) => ({
-        trailer_id: trailer.id.toString(),
-        fleet_number: trailer.fleet_number,
-        registration_number: trailer.registration_number,
-        loaded: 'Empty',
-        location: '',
-        comment: '',
-    }));
+    const initialLoads: LoadItem[] = report.loads.map((load) => {
+        const matchingTrailer = trailers.find(
+            (t) =>
+                t.fleet_number === load.fleet_number &&
+                t.registration_number === load.registration_number,
+        );
+        return {
+            trailer_id: matchingTrailer ? matchingTrailer.id.toString() : '',
+            fleet_number: load.fleet_number,
+            registration_number: load.registration_number,
+            loaded: load.loaded,
+            location: load.location,
+            comment: load.comment || '',
+        };
+    });
 
     const [loads, setLoads] = React.useState<LoadItem[]>(initialLoads);
     const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -178,8 +192,9 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
         }));
 
         router.post(
-            store(),
+            update(report),
             {
+                _method: 'PUT',
                 date: date.toISOString().split('T')[0],
                 loads: formattedLoads,
             },
@@ -193,17 +208,17 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Admin', href: '/' },
         { title: 'Trailer Loaded Reports', href: index().url },
-        { title: 'Add Report', href: '#' },
+        { title: 'Edit Report', href: '#' },
     ];
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Add Trailer Loaded Report" />
+            <Head title="Edit Trailer Loaded Report" />
             <Wrapper>
                 <div className="mb-6 flex items-center justify-between">
                     <Heading
-                        title="Add Trailer Loaded Report"
-                        description="Create a new trailer loaded report"
+                        title="Edit Trailer Loaded Report"
+                        description="Edit an existing trailer loaded report"
                     />
                     <Link href={index()}>
                         <Button variant="secondary" size="sm">
@@ -621,7 +636,7 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                             {isSubmitting && (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}
-                            Save Report
+                            Update Report
                         </Button>
                     </div>
                 </form>

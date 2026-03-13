@@ -70,9 +70,55 @@ class TrailerLoadedReportController extends Controller
     {
         $this->authorize('create', TrailerLoadedReport::class);
 
+        $exists = TrailerLoadedReport::whereDate('date', $request->date)->exists();
+        if ($exists) {
+            return back()->withErrors(['date' => 'A report already exists for this date.'])->withInput();
+        }
+
         TrailerLoadedReport::create($request->validated());
 
         return to_route('admin.trailer-loaded-reports.index');
+    }
+
+    public function edit(Request $request, TrailerLoadedReport $trailerLoadedReport)
+    {
+        $this->authorize('update', $trailerLoadedReport);
+
+        $trailers = Trailer::orderBy('fleet_number')->get(['id', 'fleet_number', 'registration_number']);
+
+        return Inertia::render('admin/trailer-loaded-reports/edit', [
+            'report' => [
+                'id' => $trailerLoadedReport->id,
+                'date' => $trailerLoadedReport->date->format('Y-m-d'),
+                'loads' => $trailerLoadedReport->loads,
+            ],
+            'trailers' => $trailers,
+        ]);
+    }
+
+    public function update(TrailerLoadedReportFormRequest $request, TrailerLoadedReport $trailerLoadedReport)
+    {
+        $this->authorize('update', $trailerLoadedReport);
+
+        $exists = TrailerLoadedReport::whereDate('date', $request->date)
+            ->where('id', '!=', $trailerLoadedReport->id)
+            ->exists();
+        if ($exists) {
+            return back()->withErrors(['date' => 'A report already exists for this date.'])->withInput();
+        }
+
+        $trailerLoadedReport->update($request->validated());
+
+        return to_route('admin.trailer-loaded-reports.index');
+    }
+
+    public function show(Request $request, TrailerLoadedReport $trailerLoadedReport)
+    {
+        $this->authorize('view', $trailerLoadedReport);
+
+        return Inertia::render('admin/trailer-loaded-reports/show', [
+            'report' => $trailerLoadedReport,
+        ]);
     }
 
     public function destroy(Request $request, TrailerLoadedReport $trailerLoadedReport)

@@ -3,7 +3,9 @@ import {
     ArrowLeft,
     Calendar,
     Check,
+    Eye,
     Loader2,
+    Pencil,
     Plus,
     Search,
     Trash2,
@@ -25,7 +27,12 @@ import { Input } from '@/components/ui/input';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes/admin';
-import { create, destroy, index } from '@/routes/admin/trailer-loaded-reports';
+import {
+    create,
+    destroy,
+    edit,
+    show,
+} from '@/routes/admin/trailer-loaded-reports';
 import type { BreadcrumbItem } from '@/types';
 
 type LoadItem = {
@@ -256,15 +263,43 @@ export default function TrailerLoadedReportsIndex({
                                             </div>
                                         </div>
                                         {can.create && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() =>
-                                                    setConfirmDelete(report)
-                                                }
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                            <div className="flex gap-1">
+                                                <Link
+                                                    href={show({
+                                                        trailerLoadedReport:
+                                                            report.id,
+                                                    })}
+                                                >
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
+                                                <Link
+                                                    href={edit({
+                                                        trailerLoadedReport:
+                                                            report.id,
+                                                    })}
+                                                >
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() =>
+                                                        setConfirmDelete(report)
+                                                    }
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                         )}
                                     </div>
                                     {report.loads.some((l) => l.location) && (
