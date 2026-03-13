@@ -20,6 +20,7 @@ class TrailerLoadedReportController extends Controller
         $perPage = $request->integer('per_page', 25);
 
         $reports = QueryBuilder::for(TrailerLoadedReport::class)
+            ->orderBy('date', 'desc')
             ->allowedFilters([
                 AllowedFilter::callback('search', function ($query, $value) {
                     $query->where(function ($q) use ($value) {
@@ -100,8 +101,9 @@ class TrailerLoadedReportController extends Controller
     {
         $this->authorize('update', $trailerLoadedReport);
 
+        $reportId = $trailerLoadedReport->id;
         $exists = TrailerLoadedReport::whereDate('date', $request->date)
-            ->where('id', '!=', $trailerLoadedReport->id)
+            ->where('id', '!=', $reportId)
             ->exists();
         if ($exists) {
             return back()->withErrors(['date' => 'A report already exists for this date.'])->withInput();

@@ -12,7 +12,7 @@ import type { BreadcrumbItem } from '@/types';
 type LoadItem = {
     fleet_number: string;
     registration_number: string;
-    loaded: string;
+    loaded: boolean;
     location: string;
     comment: string;
 };
@@ -42,12 +42,8 @@ export default function ShowTrailerLoadedReport({ report }: Props) {
         },
     ];
 
-    const loadedCount = report.loads.filter(
-        (l) => l.loaded && l.loaded.toLowerCase() !== 'empty',
-    ).length;
-    const emptyCount = report.loads.filter(
-        (l) => !l.loaded || l.loaded.toLowerCase() === 'empty',
-    ).length;
+    const loadedCount = report.loads.filter((l) => l.loaded).length;
+    const emptyCount = report.loads.filter((l) => !l.loaded).length;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -69,7 +65,7 @@ export default function ShowTrailerLoadedReport({ report }: Props) {
                         </p>
                     </div>
                     <div className="flex gap-2">
-                        <Link href={edit({ trailerLoadedReport: report.id })}>
+                        <Link href={edit({ trailerLoadedReport: report.date })}>
                             <Button variant="secondary" size="sm">
                                 <Pencil className="mr-2 h-4 w-4" />
                                 Edit
@@ -149,22 +145,19 @@ export default function ShowTrailerLoadedReport({ report }: Props) {
                                                             </span>
                                                             <Badge
                                                                 variant={
-                                                                    load.loaded &&
-                                                                    load.loaded.toLowerCase() !==
-                                                                        'empty'
+                                                                    load.loaded
                                                                         ? 'default'
                                                                         : 'secondary'
                                                                 }
                                                             >
-                                                                {load.loaded &&
-                                                                load.loaded.toLowerCase() !==
-                                                                    'empty' ? (
+                                                                {load.loaded ? (
                                                                     <Check className="mr-1 h-3 w-3" />
                                                                 ) : (
                                                                     <X className="mr-1 h-3 w-3" />
                                                                 )}
-                                                                {load.loaded ||
-                                                                    'Empty'}
+                                                                {load.loaded
+                                                                    ? 'Loaded'
+                                                                    : 'Empty'}
                                                             </Badge>
                                                         </div>
                                                         <p className="text-sm text-muted-foreground">

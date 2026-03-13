@@ -3,6 +3,8 @@ import {
     ArrowLeft,
     Calendar,
     Check,
+    ChevronsLeft,
+    ChevronsRight,
     Eye,
     Loader2,
     Pencil,
@@ -14,7 +16,6 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -24,6 +25,21 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationEllipsis,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from '@/components/ui/pagination';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes/admin';
@@ -31,6 +47,7 @@ import {
     create,
     destroy,
     edit,
+    index,
     show,
 } from '@/routes/admin/trailer-loaded-reports';
 import type { BreadcrumbItem } from '@/types';
@@ -82,35 +99,62 @@ export default function TrailerLoadedReportsIndex({
     const [isDeleting, setIsDeleting] = React.useState(false);
     const [search, setSearch] = React.useState(filters.search || '');
 
+    const loadedCount = React.useMemo(
+        () =>
+            reports.data.reduce(
+                (acc, r) => acc + r.loads.filter((l) => l.loaded).length,
+                0,
+            ),
+        [reports.data],
+    );
+    const emptyCount = React.useMemo(
+        () =>
+            reports.data.reduce(
+                (acc, r) => acc + r.loads.filter((l) => !l.loaded).length,
+                0,
+            ),
+        [reports.data],
+    );
+
     const handleDelete = () => {
         if (!confirmDelete) return;
         setIsDeleting(true);
-        router.delete(destroy({ trailerLoadedReport: confirmDelete.id }), {
-            onFinish: () => {
-                setIsDeleting(false);
-                setConfirmDelete(null);
+        router.delete(
+            destroy({ trailerLoadedReport: confirmDelete.date.split('T')[0] }),
+            {
+                onFinish: () => {
+                    setIsDeleting(false);
+                    setConfirmDelete(null);
+                },
+                preserveScroll: true,
             },
-            preserveScroll: true,
-        });
+        );
     };
 
-    const handleSearch = React.useCallback(
-        (value: string) => {
-            setSearch(value);
-            const timeout = setTimeout(() => {
-                router.get(
-                    '/admin/trailer-loaded-reports',
-                    {
+    const handleSearch = React.useCallback((value: string) => {
+        setSearch(value);
+        const timeout = setTimeout(() => {
+            router.get(
+                index({
+                    mergeQuery: {
                         ...(value ? { search: value } : {}),
-                        ...(filters.date ? { date: filters.date } : {}),
+                        page: 1,
                     },
-                    { preserveState: true },
-                );
-            }, 400);
-            return () => clearTimeout(timeout);
-        },
-        [filters.date],
-    );
+                }),
+                {},
+                { preserveState: true },
+            );
+        }, 400);
+        return () => clearTimeout(timeout);
+    }, []);
+
+    const handlePageChange = (page: number) => {
+        router.get(
+            index({ mergeQuery: { ...filters, page } }),
+            {},
+            { preserveState: true },
+        );
+    };
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Admin', href: '/' },
@@ -144,6 +188,54 @@ export default function TrailerLoadedReportsIndex({
                     </div>
                 </div>
 
+                <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+                        <CardContent className="flex items-center gap-4 p-4">
+                            <div className="rounded-full bg-blue-500/10 p-3">
+                                <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">
+                                    Total Reports
+                                </p>
+                                <p className="text-2xl font-bold">
+                                    {reports.total}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+                        <CardContent className="flex items-center gap-4 p-4">
+                            <div className="rounded-full bg-green-500/10 p-3">
+                                <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">
+                                    Total Loaded
+                                </p>
+                                <p className="text-2xl font-bold">
+                                    {loadedCount}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900">
+                        <CardContent className="flex items-center gap-4 p-4">
+                            <div className="rounded-full bg-orange-500/10 p-3">
+                                <X className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm text-muted-foreground">
+                                    Total Empty
+                                </p>
+                                <p className="text-2xl font-bold">
+                                    {emptyCount}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
                 <div className="mb-4 flex items-center gap-2">
                     <div className="relative max-w-sm flex-1">
                         <Search className="absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -174,147 +266,258 @@ export default function TrailerLoadedReportsIndex({
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                         {reports.data.map((report) => (
-                            <Card key={report.id}>
-                                <CardContent className="p-4">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-start gap-4">
-                                            <div className="flex flex-col items-center">
-                                                <Calendar className="h-5 w-5 text-muted-foreground" />
-                                                <span className="mt-1 text-sm font-medium">
-                                                    {new Date(
-                                                        report.date,
-                                                    ).toLocaleDateString(
-                                                        'en-GB',
-                                                        {
-                                                            day: '2-digit',
-                                                            month: 'short',
-                                                        },
-                                                    )}
-                                                </span>
-                                                <span className="text-xs text-muted-foreground">
-                                                    {new Date(
-                                                        report.date,
-                                                    ).getFullYear()}
-                                                </span>
-                                            </div>
-                                            <div>
-                                                <div className="space-y-2">
-                                                    {report.loads.map(
-                                                        (load, index) => (
-                                                            <div
-                                                                key={index}
-                                                                className="flex items-center gap-3"
-                                                            >
-                                                                <Badge
-                                                                    variant={
-                                                                        load.loaded
-                                                                            ? 'default'
-                                                                            : 'secondary'
-                                                                    }
-                                                                    className="flex items-center gap-1"
-                                                                >
-                                                                    {load.loaded ? (
-                                                                        <Check className="h-3 w-3" />
-                                                                    ) : (
-                                                                        <X className="h-3 w-3" />
-                                                                    )}
-                                                                    {load.loaded
-                                                                        ? 'Loaded'
-                                                                        : 'Empty'}
-                                                                </Badge>
-                                                                <div>
-                                                                    <p className="font-medium">
-                                                                        {
-                                                                            load.fleet_number
-                                                                        }
-                                                                    </p>
-                                                                    <p className="text-sm text-muted-foreground">
-                                                                        {
-                                                                            load.registration_number
-                                                                        }
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                        ),
-                                                    )}
-                                                </div>
-                                                <div className="mt-2 flex gap-2">
-                                                    <Badge variant="default">
-                                                        <Check className="mr-1 h-3 w-3" />
-                                                        {
-                                                            report.loads.filter(
-                                                                (l) => l.loaded,
-                                                            ).length
-                                                        }{' '}
-                                                        loaded
-                                                    </Badge>
-                                                    <Badge variant="outline">
-                                                        {
-                                                            report.loads.filter(
-                                                                (l) =>
-                                                                    !l.loaded,
-                                                            ).length
-                                                        }{' '}
-                                                        empty
-                                                    </Badge>
-                                                </div>
-                                            </div>
+                            <Card
+                                key={report.id}
+                                className="py-3 transition-shadow hover:shadow-md"
+                            >
+                                <div className="flex items-center justify-between px-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex h-10 w-10 flex-col items-center justify-center rounded-lg bg-primary/10">
+                                            <span className="text-sm leading-none font-bold">
+                                                {new Date(
+                                                    report.date,
+                                                ).getDate()}
+                                            </span>
+                                            <span className="text-xs uppercase">
+                                                {new Date(
+                                                    report.date,
+                                                ).toLocaleDateString('en-GB', {
+                                                    month: 'short',
+                                                })}
+                                            </span>
                                         </div>
-                                        {can.create && (
-                                            <div className="flex gap-1">
-                                                <Link
-                                                    href={show({
-                                                        trailerLoadedReport:
-                                                            report.id,
-                                                    })}
-                                                >
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                    >
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                </Link>
-                                                <Link
-                                                    href={edit({
-                                                        trailerLoadedReport:
-                                                            report.id,
-                                                    })}
-                                                >
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                    </Button>
-                                                </Link>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        setConfirmDelete(report)
-                                                    }
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {report.loads.some((l) => l.location) && (
-                                        <div className="mt-3 border-t pt-3">
-                                            <p className="text-sm text-muted-foreground">
-                                                {report.loads
-                                                    .map((l) => l.location)
-                                                    .filter(Boolean)
-                                                    .join(', ')}
+                                        <div>
+                                            <p className="font-semibold">
+                                                {new Date(
+                                                    report.date,
+                                                ).toLocaleDateString('en-GB', {
+                                                    weekday: 'short',
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                })}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {
+                                                    report.loads.filter(
+                                                        (l) => l.loaded,
+                                                    ).length
+                                                }{' '}
+                                                loaded /{' '}
+                                                {
+                                                    report.loads.filter(
+                                                        (l) => !l.loaded,
+                                                    ).length
+                                                }{' '}
+                                                empty
                                             </p>
                                         </div>
-                                    )}
-                                </CardContent>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        {report.loads.map((load, index) => (
+                                            <div
+                                                key={index}
+                                                className={`flex h-8 w-8 items-center justify-center rounded-full ${
+                                                    load.loaded
+                                                        ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400'
+                                                        : 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400'
+                                                }`}
+                                                title={`${load.fleet_number} - ${load.registration_number}`}
+                                            >
+                                                {load.loaded ? (
+                                                    <Check className="h-4 w-4" />
+                                                ) : (
+                                                    <X className="h-4 w-4" />
+                                                )}
+                                            </div>
+                                        ))}
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Link
+                                                        href={show({
+                                                            trailerLoadedReport:
+                                                                report.date.split(
+                                                                    'T',
+                                                                )[0],
+                                                        })}
+                                                    >
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="ml-2 h-8 w-8"
+                                                        >
+                                                            <Eye className="h-4 w-4" />
+                                                        </Button>
+                                                    </Link>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    View Report
+                                                </TooltipContent>
+                                            </Tooltip>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Link
+                                                        href={edit({
+                                                            trailerLoadedReport:
+                                                                report.date.split(
+                                                                    'T',
+                                                                )[0],
+                                                        })}
+                                                    >
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8"
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                    </Link>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    Edit Report
+                                                </TooltipContent>
+                                            </Tooltip>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8"
+                                                        onClick={() =>
+                                                            setConfirmDelete(
+                                                                report,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    Delete Report
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </div>
+                                </div>
                             </Card>
                         ))}
+                    </div>
+                )}
+
+                {reports.last_page > 1 && (
+                    <div className="mt-6 flex items-center justify-center">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationLink
+                                        data-disabled={
+                                            reports.current_page <= 1
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            if (reports.current_page > 1)
+                                                handlePageChange(1);
+                                        }}
+                                    >
+                                        <ChevronsLeft className="text-lg" />
+                                    </PaginationLink>
+                                </PaginationItem>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        data-disabled={
+                                            reports.current_page <= 1
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            if (reports.current_page > 1)
+                                                handlePageChange(
+                                                    reports.current_page - 1,
+                                                );
+                                        }}
+                                    />
+                                </PaginationItem>
+                                {(() => {
+                                    const current = reports.current_page;
+                                    const last = reports.last_page;
+                                    const start = Math.max(1, current - 2);
+                                    const end = Math.min(last, current + 2);
+                                    const pages: number[] = [];
+                                    for (let p = start; p <= end; p++)
+                                        pages.push(p);
+                                    const items = [] as React.ReactNode[];
+                                    if (start > 1) {
+                                        items.push(
+                                            <PaginationItem key="start-ellipsis">
+                                                <PaginationEllipsis />
+                                            </PaginationItem>,
+                                        );
+                                    }
+                                    for (const page of pages) {
+                                        items.push(
+                                            <PaginationItem key={page}>
+                                                <PaginationLink
+                                                    isActive={page === current}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        handlePageChange(page);
+                                                    }}
+                                                >
+                                                    {page}
+                                                </PaginationLink>
+                                            </PaginationItem>,
+                                        );
+                                    }
+                                    if (end < last) {
+                                        items.push(
+                                            <PaginationItem key="end-ellipsis">
+                                                <PaginationEllipsis />
+                                            </PaginationItem>,
+                                        );
+                                    }
+                                    return items;
+                                })()}
+                                <PaginationItem>
+                                    <PaginationNext
+                                        data-disabled={
+                                            reports.current_page >=
+                                            reports.last_page
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            if (
+                                                reports.current_page <
+                                                reports.last_page
+                                            )
+                                                handlePageChange(
+                                                    reports.current_page + 1,
+                                                );
+                                        }}
+                                    />
+                                </PaginationItem>
+                                <PaginationItem>
+                                    <PaginationLink
+                                        data-disabled={
+                                            reports.current_page >=
+                                            reports.last_page
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            if (
+                                                reports.current_page <
+                                                reports.last_page
+                                            )
+                                                handlePageChange(
+                                                    reports.last_page,
+                                                );
+                                        }}
+                                    >
+                                        <ChevronsRight className="text-lg" />
+                                    </PaginationLink>
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
                     </div>
                 )}
 

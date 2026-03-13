@@ -21,4 +21,9 @@ class TrailerLoadedReport extends Model
             'loads' => 'array',
         ];
     }
+
+    public function getRouteKeyName(): string
+    {
+        return 'date';
+    }
 }
