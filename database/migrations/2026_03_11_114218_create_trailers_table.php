@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('brand_name');
             $table->integer('axles_amount');
             $table->date('license_expiry_date');
+            $table->integer('order_column')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

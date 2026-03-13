@@ -1,18 +1,18 @@
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import Heading from '@/components/heading';
-import type { BreadcrumbItem } from '@/types';
-import { dashboard } from '@/routes/admin';
-import { index as usersIndex, update } from '@/routes/admin/users';
-import avatarRoutes from '@/routes/admin/users/avatar';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { AvatarUploader } from '@/components/avatar-uploader';
+import Heading from '@/components/heading';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import Wrapper from '@/components/wrapper';
-import { AvatarUploader } from '@/components/avatar-uploader';
 
-import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
+import { dashboard } from '@/routes/admin';
+import { index as usersIndex, update } from '@/routes/admin/users';
+import avatarRoutes from '@/routes/admin/users/avatar';
+import type { BreadcrumbItem } from '@/types';
 
 export default function AdminUsersEdit({
     user,

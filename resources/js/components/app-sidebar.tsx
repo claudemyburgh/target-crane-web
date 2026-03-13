@@ -24,14 +24,14 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
+import { useCurrentUrl } from '@/hooks/use-current-url';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 import { usePermissions } from '@/hooks/use-permissions';
 import { dashboard } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
-import { index as adminUsersIndex } from '@/routes/admin/users';
 import { index as trailersIndex } from '@/routes/admin/trailers';
-import { useCurrentUrl } from '@/hooks/use-current-url';
+import { index as adminUsersIndex } from '@/routes/admin/users';
 import type { NavItem } from '@/types';
 import {
     DropdownMenu,

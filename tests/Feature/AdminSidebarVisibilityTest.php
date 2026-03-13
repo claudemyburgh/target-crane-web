@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 it('does not show Admin link for non-admin users', function (): void {
     $user = User::factory()->create();
@@ -18,7 +19,7 @@ it('does not show Admin link for non-admin users', function (): void {
 
 it('shows Admin link for admin users and allows accessing admin dashboard', function (): void {
     $user = User::factory()->create();
-    \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'admin']);
+    Role::firstOrCreate(['name' => 'admin']);
     $user->assignRole('admin');
 
     $this->actingAs($user);

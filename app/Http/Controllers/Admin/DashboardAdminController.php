@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
+use Spatie\Activitylog\Models\Activity;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class DashboardAdminController extends Controller
 {
@@ -20,11 +25,11 @@ class DashboardAdminController extends Controller
         $usersCount = User::query()->count();
 
         // Helpers
-        $daysRange = fn (int $startDaysAgo, int $length): \Illuminate\Support\Collection => collect(range($length - 1, 0))->reverse()->map(
+        $daysRange = fn (int $startDaysAgo, int $length): Collection => collect(range($length - 1, 0))->reverse()->map(
             fn (int $i): string => now()->subDays($startDaysAgo + ($length - 1 - $i))->toDateString()
         );
 
-        $buildSeries = function (\Illuminate\Database\Eloquent\Builder $builder, string $dateColumn, int $length, int $startDaysAgo = 0, ?string $distinctColumn = null): array {
+        $buildSeries = function (Builder $builder, string $dateColumn, int $length, int $startDaysAgo = 0, ?string $distinctColumn = null): array {
             $days = collect(range($length - 1, 0))->map(fn (int $i): string => now()->subDays($startDaysAgo + ($length - 1 - $i))->toDateString());
             $countExpr = $distinctColumn ? ('COUNT(DISTINCT '.$distinctColumn.')') : 'COUNT(*)';
 
@@ -47,13 +52,13 @@ class DashboardAdminController extends Controller
         };
 
         // Active users via activity log (distinct causer_id per day, limited to User causers)
-        $activeUsersBuilder = \Spatie\Activitylog\Models\Activity::query()
+        $activeUsersBuilder = Activity::query()
             ->whereNotNull('causer_id')
             ->where('causer_type', User::class);
 
         // Roles & permissions builders
-        $roleBuilder = \Spatie\Permission\Models\Role::query();
-        $permissionBuilder = \Spatie\Permission\Models\Permission::query();
+        $roleBuilder = Role::query();
+        $permissionBuilder = Permission::query();
 
         return Inertia::render('admin/dashboard', [
             'stats' => [

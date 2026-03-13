@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
 import { router, usePage } from '@inertiajs/react';
-import type { Auth } from '@/types/auth';
 import { Trash2, Upload, X } from 'lucide-react';
+import React, { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { toast } from 'sonner';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useInitials } from '@/hooks/use-initials';
-import { toast } from 'sonner';
+import type { Auth } from '@/types/auth';
 
 interface AvatarUploaderProps {
     currentAvatarUrl?: string;

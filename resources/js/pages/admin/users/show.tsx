@@ -1,12 +1,12 @@
 import { Head, Link } from '@inertiajs/react';
+import { ArrowLeft, Pencil } from 'lucide-react';
+import Heading from '@/components/heading';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
-import Heading from '@/components/heading';
 import { dashboard } from '@/routes/admin';
 import { edit as usersEdit, index as usersIndex } from '@/routes/admin/users';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Pencil } from 'lucide-react';
 import type { BreadcrumbItem } from '@/types';
 
 export default function AdminUsersShow({ user }: { user: any }) {

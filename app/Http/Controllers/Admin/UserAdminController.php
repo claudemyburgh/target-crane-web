@@ -5,14 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Users\BanUserRequest;
 use App\Http\Requests\Admin\Users\BulkActionRequest;
-use App\Http\Requests\Admin\Users\IndexRequest;
 use App\Http\Requests\Admin\Users\RoleChangeRequest;
 use App\Http\Requests\Admin\Users\StoreUserRequest;
 use App\Http\Requests\Admin\Users\UpdateUserRequest;
 use App\Models\User;
 use App\Services\Admin\UserService;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\Permission\Models\Role;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class UserAdminController extends Controller
 {
@@ -21,19 +24,55 @@ class UserAdminController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(IndexRequest $request): Response
+    public function index(Request $request): Response
     {
         $this->authorize('viewAny', User::class);
 
-        $filters = $request->validated();
-        $perPage = (int) ($filters['per_page'] ?? 25);
-        $users = $this->service->list($filters)->paginate($perPage)->onEachSide(3)->withQueryString();
+        $perPage = $request->integer('per_page', 25);
 
-        $roles = \Spatie\Permission\Models\Role::query()->pluck('name');
+        $users = QueryBuilder::for(User::class)
+            ->with(['roles'])
+            ->allowedFilters([
+                AllowedFilter::partial('search', 'name'),
+                AllowedFilter::partial('search', 'email'),
+                AllowedFilter::exact('role', 'roles.name'),
+                AllowedFilter::callback('status', function ($query, $value) {
+                    if ($value === 'deleted') {
+                        $query->onlyTrashed();
+                    } elseif ($value === 'active') {
+                        $query->withoutTrashed()->where('is_banned', false);
+                    } elseif ($value === 'banned') {
+                        $query->withoutTrashed()->where('is_banned', true);
+                    }
+                }),
+                AllowedFilter::callback('email_verified', function ($query, $value) {
+                    if ($value === 'yes') {
+                        $query->whereNotNull('email_verified_at');
+                    } elseif ($value === 'no') {
+                        $query->whereNull('email_verified_at');
+                    }
+                }),
+            ])
+            ->allowedSorts(['name', 'email', 'created_at', 'order_column'])
+            ->defaultSort('order_column')
+            ->paginate($perPage)
+            ->onEachSide(3)
+            ->withQueryString();
+
+        $roles = Role::query()->pluck('name');
 
         return Inertia::render('admin/users/index', [
             'users' => $users,
-            'filters' => $filters,
+            'filters' => [
+                'search' => $request->string('search', ''),
+                'role' => $request->string('role', ''),
+                'status' => $request->string('status', ''),
+                'email_verified' => $request->string('email_verified', ''),
+                'sort' => $request->string('sort', 'order_column'),
+                'direction' => $request->string('direction', 'asc'),
+                'per_page' => $perPage,
+                'page' => $request->integer('page', 1),
+            ],
             'roles' => $roles,
             'can' => [
                 'create' => $request->user()->can('create users'),
@@ -63,7 +102,7 @@ class UserAdminController extends Controller
     {
         $this->authorize('create', User::class);
 
-        $roles = \Spatie\Permission\Models\Role::query()->pluck('name');
+        $roles = Role::query()->pluck('name');
 
         return Inertia::render('admin/users/create', [
             'roles' => $roles,
@@ -90,7 +129,7 @@ class UserAdminController extends Controller
     {
         $this->authorize('update', $user);
         $user->load('roles');
-        $roles = \Spatie\Permission\Models\Role::query()->pluck('name');
+        $roles = Role::query()->pluck('name');
 
         return Inertia::render('admin/users/edit', [
             'user' => $user,
@@ -162,9 +201,9 @@ class UserAdminController extends Controller
         return back()->with('success', 'Role removed');
     }
 
-    public function uploadAvatar(\Illuminate\Http\Request $request, User $user)
+    public function uploadAvatar(Request $request, User $user)
     {
-   
+
         $this->authorize('update', $user);
 
         $validated = $request->validate([
@@ -179,7 +218,7 @@ class UserAdminController extends Controller
         ]);
     }
 
-    public function deleteAvatar(\Illuminate\Http\Request $request, User $user)
+    public function deleteAvatar(Request $request, User $user)
     {
         $this->authorize('update', $user);
 

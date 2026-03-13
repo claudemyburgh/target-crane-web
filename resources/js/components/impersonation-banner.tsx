@@ -1,9 +1,9 @@
-import { router, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { AlertCircle, X } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import type { Auth } from '@/types';
 
+import {stop}from "@/routes/admin/impersonate"
+import type { Auth } from '@/types';
 export function ImpersonationBanner() {
     const page = usePage();
     const { auth, impersonating } = page.props as {
@@ -16,11 +16,6 @@ export function ImpersonationBanner() {
         return null;
     }
 
-    const handleStopImpersonating = () => {
-        // GET fallback route avoids CSRF issues and guarantees a plain URL string
-        router.post('/admin/impersonate/stop');
-    };
-
     return (
         <Alert
             variant="default"
@@ -31,15 +26,15 @@ export function ImpersonationBanner() {
                 <span className="font-medium">
                     You are currently impersonating {auth.user?.name}.
                 </span>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleStopImpersonating}
-                    className="ml-4"
+                <Link
+                    href={stop()}
+                    method="post"
+                    as="button"
+                    className="ml-4 inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
                 >
                     <X className="mr-2 h-4 w-4" />
                     Stop Impersonating
-                </Button>
+                </Link>
             </AlertDescription>
         </Alert>
     );

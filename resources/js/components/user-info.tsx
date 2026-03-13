@@ -1,6 +1,6 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useInitials } from '@/hooks/use-initials';
-import { useEffect, useMemo, useState } from 'react';
 import type { User } from '@/types';
 
 export function UserInfo({

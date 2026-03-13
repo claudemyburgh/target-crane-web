@@ -1,15 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
-    flexRender,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
-import {
     ArrowUpDown,
     ChevronsLeft,
     ChevronsRight,
     Eye,
+    Loader2,
     MoreVertical,
     Pencil,
     RotateCcw,
@@ -20,14 +16,15 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 import Heading from '@/components/heading';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DataTable } from '@/components/ui/data-table';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
 import {
     DropdownMenu,
@@ -54,15 +51,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import Wrapper from '@/components/wrapper';
-import {
-    Empty,
-    EmptyDescription,
-    EmptyHeader,
-    EmptyMedia,
-    EmptyTitle,
-} from '@/components/ui/empty';
-import { Badge } from '@/components/ui/badge';
-import { usePaginationStore } from '@/store/use-pagination-store';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes/admin';
 import {
@@ -75,6 +63,7 @@ import {
     restore,
     show,
 } from '@/routes/admin/trailers';
+import { usePaginationStore } from '@/store/use-pagination-store';
 import type { BreadcrumbItem } from '@/types';
 
 type Trailer = {
@@ -87,6 +76,7 @@ type Trailer = {
     created_at: string;
     updated_at: string;
     deleted_at?: string | null;
+    order_column?: number;
 };
 
 export default function AdminTrailersIndex({
@@ -108,10 +98,10 @@ export default function AdminTrailersIndex({
 
     const [localFilters, setLocalFilters] = React.useState({
         search: filters?.search ?? '',
-        status: filters?.status ?? '',
-        brand: filters?.brand ?? '',
-        sort: filters?.sort ?? 'created_at',
-        direction: filters?.direction ?? 'desc',
+        status: filters?.status ?? 'all',
+        brand: filters?.brand ?? 'all',
+        sort: filters?.sort ?? 'order_column',
+        direction: filters?.direction ?? 'asc',
         page: filters?.page ?? 1,
         per_page: filters?.per_page ?? getPerPage(currentPath, 25),
     });
@@ -125,13 +115,78 @@ export default function AdminTrailersIndex({
     const [confirmDeleteTrailer, setConfirmDeleteTrailer] =
         React.useState<Trailer | null>(null);
     const [confirmBulkDelete, setConfirmBulkDelete] = React.useState(false);
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
+    const [bulkActionLoading, setBulkActionLoading] = React.useState<
+        string | null
+    >(null);
+
+    const normalize = React.useCallback((f: typeof localFilters) => {
+        const serverDefaultPer = 25;
+
+        const filters: Record<string, any> = {};
+        if (f.search) {
+            filters.search = f.search;
+        }
+        if (f.status && f.status !== 'all') {
+            filters.status = f.status;
+        }
+        if (f.brand && f.brand !== 'all') {
+            filters.brand = f.brand;
+        }
+
+        const sortFields = [
+            'fleet_number',
+            'registration_number',
+            'brand_name',
+            'axles_amount',
+            'license_expiry_date',
+            'order_column',
+        ];
+
+        return {
+            ...(Object.keys(filters).length > 0 ? { filter: filters } : {}),
+            page: f.page && f.page !== 1 ? f.page : undefined,
+            per_page:
+                f.per_page && f.per_page !== serverDefaultPer
+                    ? f.per_page
+                    : undefined,
+            ...(f.sort && sortFields.includes(f.sort) ? { sort: f.sort } : {}),
+            ...(f.direction ? { direction: f.direction } : {}),
+        } as Record<string, any>;
+    }, []);
+
+    const localFiltersRef = React.useRef(localFilters);
+    React.useEffect(() => {
+        localFiltersRef.current = localFilters;
+    }, [localFilters]);
+
+    const submitFilters = React.useCallback(
+        (arg?: React.FormEvent | Partial<typeof localFilters>) => {
+            let next: Partial<typeof localFilters> = {};
+            if (arg && 'preventDefault' in arg) {
+                (arg as React.FormEvent).preventDefault();
+            } else if (arg) {
+                next = arg as Partial<typeof localFilters>;
+            }
+            const params = normalize({
+                ...localFiltersRef.current,
+                ...next,
+            });
+            router.get(trailersIndex(), params as Record<string, any>, {
+                preserveState: true,
+                preserveScroll: true,
+            });
+        },
+        [normalize],
+    );
 
     const columns = React.useMemo<ColumnDef<Trailer>[]>(
         () => [
             {
                 id: 'select',
                 header: () => (
-                    <div className="w-px">
+                    <div className="w-2">
                         <Checkbox
                             checked={
                                 Object.keys(rowSelection).length ===
@@ -312,7 +367,7 @@ export default function AdminTrailersIndex({
                     if (t.deleted_at) {
                         return <Badge variant="destructive">Deleted</Badge>;
                     }
-                    return <Badge variant="default">Active</Badge>;
+                    return <Badge variant="outline">Active</Badge>;
                 },
             },
             {
@@ -404,16 +459,8 @@ export default function AdminTrailersIndex({
                 },
             },
         ],
-        [data, rowSelection, can, localFilters.direction],
+        [data, rowSelection, can, localFilters.direction, submitFilters],
     );
-
-    const table = useReactTable({
-        data,
-        columns,
-        state: { rowSelection },
-        onRowSelectionChange: setRowSelection,
-        getCoreRowModel: getCoreRowModel(),
-    });
 
     const selectedIds = React.useMemo(
         () =>
@@ -422,28 +469,6 @@ export default function AdminTrailersIndex({
                 .map(([k]) => Number(k)),
         [rowSelection],
     );
-
-    const normalize = (f: typeof localFilters) => {
-        const serverDefaultPer = 25;
-        const brand = f.brand === 'any' ? '' : f.brand;
-        const status = f.status === 'any' ? '' : f.status;
-        const sort = f.sort || undefined;
-        const direction =
-            sort && f.direction !== 'asc' ? f.direction : undefined;
-
-        return {
-            search: f.search || undefined,
-            status: status || undefined,
-            brand: brand || undefined,
-            page: f.page && f.page !== 1 ? f.page : undefined,
-            per_page:
-                f.per_page && f.per_page !== serverDefaultPer
-                    ? f.per_page
-                    : undefined,
-            sort,
-            direction,
-        } as Record<string, any>;
-    };
 
     const clearFilter = (key: 'search' | 'status' | 'brand') => {
         setLocalFilters((f) => ({ ...f, [key]: '', page: 1 }));
@@ -457,26 +482,7 @@ export default function AdminTrailersIndex({
         }
         const id = setTimeout(() => submitFilters(), 400);
         return () => clearTimeout(id);
-    }, [localFilters.search]);
-
-    const submitFilters = (
-        arg?: React.FormEvent | Partial<typeof localFilters>,
-    ) => {
-        let next: Partial<typeof localFilters> = {};
-        if (arg && 'preventDefault' in arg) {
-            (arg as React.FormEvent).preventDefault();
-        } else if (arg) {
-            next = arg as Partial<typeof localFilters>;
-        }
-        const params = normalize({
-            ...(localFilters as typeof localFilters),
-            ...next,
-        });
-        router.get(trailersIndex(), params as Record<string, any>, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
+    }, [localFilters.search, submitFilters]);
 
     React.useEffect(() => {
         submitFilters();
@@ -486,21 +492,40 @@ export default function AdminTrailersIndex({
         localFilters.brand,
         localFilters.sort,
         localFilters.direction,
+        submitFilters,
     ]);
 
     const bulk = (action: string) => {
         if (selectedIds.length === 0) return;
+        if (action === 'delete') {
+            setIsBulkDeleting(true);
+        } else {
+            setBulkActionLoading(action);
+        }
         router.post(
             bulkRoute(),
             { action, ids: selectedIds },
-            { preserveScroll: true },
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    if (action === 'delete') {
+                        setIsBulkDeleting(false);
+                        setConfirmBulkDelete(false);
+                    } else {
+                        setBulkActionLoading(null);
+                    }
+                    clearSelection();
+                },
+            },
         );
     };
 
     const doDelete = () => {
         if (!confirmDeleteTrailer) return;
+        setIsDeleting(true);
         router.delete(destroy(confirmDeleteTrailer.id), {
             onSuccess: () => setConfirmDeleteTrailer(null),
+            onFinish: () => setIsDeleting(false),
             preserveScroll: true,
         });
     };
@@ -567,7 +592,7 @@ export default function AdminTrailersIndex({
                                 <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="any">Any status</SelectItem>
+                                <SelectItem value="all">All</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
                                 <SelectItem value="deleted">Deleted</SelectItem>
                             </SelectContent>
@@ -590,7 +615,7 @@ export default function AdminTrailersIndex({
                                 <SelectValue placeholder="Brand" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="any">Any brand</SelectItem>
+                                <SelectItem value="all">All</SelectItem>
                                 {brands.map((r: string) => (
                                     <SelectItem key={r} value={r}>
                                         {r}
@@ -609,12 +634,12 @@ export default function AdminTrailersIndex({
                             const defaultPerPage = getPerPage(currentPath, 25);
                             const reset = {
                                 search: '',
-                                status: '',
-                                brand: '',
+                                status: 'all',
+                                brand: 'all',
                                 page: 1,
                                 per_page: defaultPerPage,
-                                sort: 'created_at',
-                                direction: 'desc',
+                                sort: 'order_column',
+                                direction: 'asc',
                             } as typeof localFilters;
                             setLocalFilters(reset);
                             submitFilters(reset);
@@ -669,37 +694,41 @@ export default function AdminTrailersIndex({
                             </Button>
                         </Badge>
                     )}
-                    {localFilters.status && localFilters.status !== 'any' && (
-                        <Badge variant="secondary" className="pr-1">
-                            Status: {localFilters.status}
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="ml-1 h-5 w-5"
-                                onClick={() => clearFilter('status')}
-                            >
-                                <X className="h-3 w-3" />
-                            </Button>
-                        </Badge>
-                    )}
-                    {localFilters.brand && localFilters.brand !== 'any' && (
-                        <Badge variant="secondary" className="pr-1">
-                            Brand: {localFilters.brand}
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="ml-1 h-5 w-5"
-                                onClick={() => clearFilter('brand')}
-                            >
-                                <X className="h-3 w-3" />
-                            </Button>
-                        </Badge>
-                    )}
+                    {localFilters.status &&
+                        localFilters.status !== '' &&
+                        localFilters.status !== 'all' && (
+                            <Badge variant="secondary" className="pr-1">
+                                Status: {localFilters.status}
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="ml-1 h-5 w-5"
+                                    onClick={() => clearFilter('status')}
+                                >
+                                    <X className="h-3 w-3" />
+                                </Button>
+                            </Badge>
+                        )}
+                    {localFilters.brand &&
+                        localFilters.brand !== '' &&
+                        localFilters.brand !== 'all' && (
+                            <Badge variant="secondary" className="pr-1">
+                                Brand: {localFilters.brand}
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="ml-1 h-5 w-5"
+                                    onClick={() => clearFilter('brand')}
+                                >
+                                    <X className="h-3 w-3" />
+                                </Button>
+                            </Badge>
+                        )}
                     {!localFilters.search &&
-                        (!localFilters.status ||
-                            localFilters.status === 'any') &&
-                        (!localFilters.brand ||
-                            localFilters.brand === 'any') && (
+                        (localFilters.status === '' ||
+                            localFilters.status === 'all') &&
+                        (localFilters.brand === '' ||
+                            localFilters.brand === 'all') && (
                             <span className="text-sm text-muted-foreground">
                                 No active filters
                             </span>
@@ -718,6 +747,9 @@ export default function AdminTrailersIndex({
                                     size="sm"
                                     variant="secondary"
                                     onClick={() => setConfirmBulkDelete(true)}
+                                    disabled={
+                                        isBulkDeleting || !!bulkActionLoading
+                                    }
                                 >
                                     Delete
                                 </Button>
@@ -725,15 +757,31 @@ export default function AdminTrailersIndex({
                                     size="sm"
                                     variant="secondary"
                                     onClick={() => bulk('restore')}
+                                    disabled={!!bulkActionLoading}
                                 >
-                                    Restore
+                                    {bulkActionLoading === 'restore' ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Restoring...
+                                        </>
+                                    ) : (
+                                        'Restore'
+                                    )}
                                 </Button>
                                 <Button
                                     size="sm"
                                     variant="secondary"
                                     onClick={() => bulk('force-delete')}
+                                    disabled={!!bulkActionLoading}
                                 >
-                                    Permanently Delete
+                                    {bulkActionLoading === 'force-delete' ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Deleting...
+                                        </>
+                                    ) : (
+                                        'Permanently Delete'
+                                    )}
                                 </Button>
                             </>
                         )}
@@ -748,250 +796,209 @@ export default function AdminTrailersIndex({
                 )}
 
                 {/* Table */}
-                <div className="w-full overflow-x-auto rounded border">
-                    <table className="w-full">
-                        <thead>
-                            {table.getHeaderGroups().map((hg) => (
-                                <tr key={hg.id}>
-                                    {hg.headers.map((header) => (
-                                        <th
-                                            key={header.id}
-                                            className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
-                                        >
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
-                                                      header.getContext(),
-                                                  )}
-                                        </th>
-                                    ))}
-                                </tr>
-                            ))}
-                        </thead>
-                        <tbody>
-                            {table.getRowModel().rows.length === 0 ? (
-                                <tr>
-                                    <td
-                                        colSpan={
-                                            table.getAllLeafColumns().length
-                                        }
-                                        className="p-6"
-                                    >
-                                        <Empty className="border">
-                                            <EmptyHeader>
-                                                <EmptyMedia variant="icon">
-                                                    <Truck className="size-5" />
-                                                </EmptyMedia>
-                                                <EmptyTitle>
-                                                    No trailers found
-                                                </EmptyTitle>
-                                                <EmptyDescription>
-                                                    Try adjusting your filters
-                                                    or clearing them to see more
-                                                    results.
-                                                </EmptyDescription>
-                                            </EmptyHeader>
-                                        </Empty>
-                                    </td>
-                                </tr>
-                            ) : (
-                                table.getRowModel().rows.map((row) => (
-                                    <tr key={row.id} className="border-t">
-                                        {row.getVisibleCells().map((cell) => (
-                                            <td
-                                                key={cell.id}
-                                                className="px-3 py-2 text-sm"
-                                            >
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
-                                                )}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    rowSelection={rowSelection}
+                    onRowSelectionChange={setRowSelection}
+                    bulkRoute={bulkRoute}
+                    reorderable={true}
+                    emptyMessage="No trailers found"
+                    emptyIcon={
+                        <Truck className="size-5 text-muted-foreground" />
+                    }
+                />
 
                 {/* Pagination */}
-                <div className="mt-0 flex items-center justify-center gap-2">
-                    <Pagination>
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationLink
-                                    aria-label="First"
-                                    href={
-                                        trailersIndex({
-                                            mergeQuery: {
-                                                ...normalize(localFilters),
+                {(trailers?.last_page ?? 1) > 1 && (
+                    <div className="mt-0 flex items-center justify-center gap-2">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationLink
+                                        aria-label="First"
+                                        href={
+                                            trailersIndex({
+                                                mergeQuery: {
+                                                    ...normalize(localFilters),
+                                                    page: 1,
+                                                },
+                                            }).url
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setLocalFilters((f) => ({
+                                                ...f,
                                                 page: 1,
-                                            },
-                                        }).url
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setLocalFilters((f) => ({
-                                            ...f,
-                                            page: 1,
-                                        }));
-                                        submitFilters({ page: 1 });
-                                    }}
-                                    data-disabled={trailers?.current_page <= 1}
-                                >
-                                    <ChevronsLeft className="text-lg" />
-                                </PaginationLink>
-                            </PaginationItem>
-                            <PaginationItem>
-                                <PaginationPrevious
-                                    href={
-                                        trailersIndex({
-                                            mergeQuery: {
-                                                ...normalize(localFilters),
-                                                page: Math.max(
+                                            }));
+                                            submitFilters({ page: 1 });
+                                        }}
+                                        data-disabled={
+                                            trailers?.current_page <= 1
+                                        }
+                                    >
+                                        <ChevronsLeft className="text-lg" />
+                                    </PaginationLink>
+                                </PaginationItem>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        href={
+                                            trailersIndex({
+                                                mergeQuery: {
+                                                    ...normalize(localFilters),
+                                                    page: Math.max(
+                                                        1,
+                                                        (trailers?.current_page ??
+                                                            1) - 1,
+                                                    ),
+                                                },
+                                            }).url
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            const page = Math.max(
+                                                1,
+                                                (trailers?.current_page ?? 1) -
                                                     1,
-                                                    (trailers?.current_page ??
-                                                        1) - 1,
-                                                ),
-                                            },
-                                        }).url
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        const page = Math.max(
-                                            1,
-                                            (trailers?.current_page ?? 1) - 1,
+                                            );
+                                            setLocalFilters((f) => ({
+                                                ...f,
+                                                page,
+                                            }));
+                                            submitFilters({ page });
+                                        }}
+                                        data-disabled={
+                                            trailers?.current_page <= 1
+                                        }
+                                    />
+                                </PaginationItem>
+                                {(() => {
+                                    const current = trailers?.current_page ?? 1;
+                                    const last = trailers?.last_page ?? 1;
+                                    const start = Math.max(1, current - 3);
+                                    const end = Math.min(last, current + 3);
+                                    const pages: number[] = [];
+                                    for (let p = start; p <= end; p++)
+                                        pages.push(p);
+                                    const items = [] as React.ReactNode[];
+                                    if (start > 1) {
+                                        items.push(
+                                            <PaginationItem key="start-ellipsis">
+                                                <PaginationEllipsis />
+                                            </PaginationItem>,
                                         );
-                                        setLocalFilters((f) => ({
-                                            ...f,
-                                            page,
-                                        }));
-                                        submitFilters({ page });
-                                    }}
-                                    data-disabled={trailers?.current_page <= 1}
-                                />
-                            </PaginationItem>
-                            {(() => {
-                                const current = trailers?.current_page ?? 1;
-                                const last = trailers?.last_page ?? 1;
-                                const start = Math.max(1, current - 3);
-                                const end = Math.min(last, current + 3);
-                                const pages: number[] = [];
-                                for (let p = start; p <= end; p++)
-                                    pages.push(p);
-                                const items = [] as React.ReactNode[];
-                                if (start > 1) {
-                                    items.push(
-                                        <PaginationItem key="start-ellipsis">
-                                            <PaginationEllipsis />
-                                        </PaginationItem>,
-                                    );
-                                }
-                                for (const page of pages) {
-                                    items.push(
-                                        <PaginationItem key={page}>
-                                            <PaginationLink
-                                                isActive={page === current}
-                                                href={
-                                                    trailersIndex({
-                                                        mergeQuery: {
-                                                            ...normalize(
-                                                                localFilters,
-                                                            ),
-                                                            page,
-                                                        },
-                                                    }).url
-                                                }
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    setLocalFilters((f) => ({
-                                                        ...f,
-                                                        page,
-                                                    }));
-                                                    submitFilters({ page });
-                                                }}
-                                            >
-                                                {page}
-                                            </PaginationLink>
-                                        </PaginationItem>,
-                                    );
-                                }
-                                if (end < last) {
-                                    items.push(
-                                        <PaginationItem key="end-ellipsis">
-                                            <PaginationEllipsis />
-                                        </PaginationItem>,
-                                    );
-                                }
-                                return items;
-                            })()}
-                            <PaginationItem>
-                                <PaginationNext
-                                    href={
-                                        trailersIndex({
-                                            mergeQuery: {
-                                                ...normalize(localFilters),
-                                                page: Math.min(
-                                                    trailers?.last_page ?? 1,
-                                                    (trailers?.current_page ??
-                                                        1) + 1,
-                                                ),
-                                            },
-                                        }).url
                                     }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        const last = trailers?.last_page ?? 1;
-                                        const page = Math.min(
-                                            last,
-                                            (trailers?.current_page ?? 1) + 1,
+                                    for (const page of pages) {
+                                        items.push(
+                                            <PaginationItem key={page}>
+                                                <PaginationLink
+                                                    isActive={page === current}
+                                                    href={
+                                                        trailersIndex({
+                                                            mergeQuery: {
+                                                                ...normalize(
+                                                                    localFilters,
+                                                                ),
+                                                                page,
+                                                            },
+                                                        }).url
+                                                    }
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setLocalFilters(
+                                                            (f) => ({
+                                                                ...f,
+                                                                page,
+                                                            }),
+                                                        );
+                                                        submitFilters({ page });
+                                                    }}
+                                                >
+                                                    {page}
+                                                </PaginationLink>
+                                            </PaginationItem>,
                                         );
-                                        setLocalFilters((f) => ({
-                                            ...f,
-                                            page,
-                                        }));
-                                        submitFilters({ page });
-                                    }}
-                                    data-disabled={
-                                        trailers?.current_page >=
-                                        trailers?.last_page
                                     }
-                                />
-                            </PaginationItem>
-                            <PaginationItem>
-                                <PaginationLink
-                                    aria-label="Last"
-                                    href={
-                                        trailersIndex({
-                                            mergeQuery: {
-                                                ...normalize(localFilters),
-                                                page: trailers?.last_page ?? 1,
-                                            },
-                                        }).url
+                                    if (end < last) {
+                                        items.push(
+                                            <PaginationItem key="end-ellipsis">
+                                                <PaginationEllipsis />
+                                            </PaginationItem>,
+                                        );
                                     }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        const page = trailers?.last_page ?? 1;
-                                        setLocalFilters((f) => ({
-                                            ...f,
-                                            page,
-                                        }));
-                                        submitFilters({ page });
-                                    }}
-                                    data-disabled={
-                                        trailers?.current_page >=
-                                        trailers?.last_page
-                                    }
-                                >
-                                    <ChevronsRight className="text-lg" />
-                                </PaginationLink>
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
-                </div>
+                                    return items;
+                                })()}
+                                <PaginationItem>
+                                    <PaginationNext
+                                        href={
+                                            trailersIndex({
+                                                mergeQuery: {
+                                                    ...normalize(localFilters),
+                                                    page: Math.min(
+                                                        trailers?.last_page ??
+                                                            1,
+                                                        (trailers?.current_page ??
+                                                            1) + 1,
+                                                    ),
+                                                },
+                                            }).url
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            const last =
+                                                trailers?.last_page ?? 1;
+                                            const page = Math.min(
+                                                last,
+                                                (trailers?.current_page ?? 1) +
+                                                    1,
+                                            );
+                                            setLocalFilters((f) => ({
+                                                ...f,
+                                                page,
+                                            }));
+                                            submitFilters({ page });
+                                        }}
+                                        data-disabled={
+                                            trailers?.current_page >=
+                                            trailers?.last_page
+                                        }
+                                    />
+                                </PaginationItem>
+                                <PaginationItem>
+                                    <PaginationLink
+                                        aria-label="Last"
+                                        href={
+                                            trailersIndex({
+                                                mergeQuery: {
+                                                    ...normalize(localFilters),
+                                                    page:
+                                                        trailers?.last_page ??
+                                                        1,
+                                                },
+                                            }).url
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            const page =
+                                                trailers?.last_page ?? 1;
+                                            setLocalFilters((f) => ({
+                                                ...f,
+                                                page,
+                                            }));
+                                            submitFilters({ page });
+                                        }}
+                                        data-disabled={
+                                            trailers?.current_page >=
+                                            trailers?.last_page
+                                        }
+                                    >
+                                        <ChevronsRight className="text-lg" />
+                                    </PaginationLink>
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
+                )}
 
                 {/* Delete Confirmation Dialog */}
                 <Dialog
@@ -1016,11 +1023,23 @@ export default function AdminTrailersIndex({
                             <Button
                                 variant="outline"
                                 onClick={() => setConfirmDeleteTrailer(null)}
+                                disabled={isDeleting}
                             >
                                 Cancel
                             </Button>
-                            <Button variant="destructive" onClick={doDelete}>
-                                Delete
+                            <Button
+                                variant="destructive"
+                                onClick={doDelete}
+                                disabled={isDeleting}
+                            >
+                                {isDeleting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    'Delete'
+                                )}
                             </Button>
                         </div>
                     </DialogContent>
@@ -1046,17 +1065,23 @@ export default function AdminTrailersIndex({
                             <Button
                                 variant="outline"
                                 onClick={() => setConfirmBulkDelete(false)}
+                                disabled={isBulkDeleting}
                             >
                                 Cancel
                             </Button>
                             <Button
                                 variant="destructive"
-                                onClick={() => {
-                                    bulk('delete');
-                                    setConfirmBulkDelete(false);
-                                }}
+                                onClick={() => bulk('delete')}
+                                disabled={isBulkDeleting}
                             >
-                                Delete
+                                {isBulkDeleting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    'Delete'
+                                )}
                             </Button>
                         </div>
                     </DialogContent>

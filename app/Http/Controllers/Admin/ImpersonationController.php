@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+
 use function activity;
 
 class ImpersonationController extends Controller
@@ -23,10 +24,7 @@ class ImpersonationController extends Controller
             return back()->with('error', 'You cannot impersonate yourself.');
         }
 
-        // Store the original user ID in session
-        session(['impersonate_original_user' => $originalUser->uuid]);
-
-        // Login as the target user
+        // Login as the target user - package handles session automatically
         $originalUser->impersonate($user);
 
         activity()
@@ -42,26 +40,38 @@ class ImpersonationController extends Controller
      */
     public function stop(Request $request): RedirectResponse
     {
-        $originalUserId = session('impersonate_original_user');
+        // Check if impersonation is active using the package's session key
+        $originalUserId = session('impersonated_by');
 
         if (! $originalUserId) {
-            return back()->with('error', 'You are not impersonating anyone.');
+            return redirect()->route('dashboard')->with('error', 'You are not impersonating anyone.');
         }
 
-        // Get the original user
-        $originalUser = User::findOrFail($originalUserId);
+        // Get the original user (the admin who started impersonating)
+        $originalUser = User::find($originalUserId);
 
+        if (! $originalUser) {
+            session()->forget('impersonated_by');
+            session()->forget('impersonator_guard');
+            session()->forget('impersonator_guard_using');
 
-        // Remove impersonation session
-        session()->forget('impersonate_original_user');
+            return redirect()->route('dashboard')->with('error', 'Original user not found.');
+        }
 
+        // Log activity before leaving impersonation
         activity()
             ->causedBy($originalUser)
             ->log('Stopped impersonating user');
 
-        // Login back as the original user
-        Auth::user()->leaveImpersonation();
+        // Clear session keys first
+        session()->forget('impersonated_by');
+        session()->forget('impersonator_guard');
+        session()->forget('impersonator_guard_using');
 
-        return redirect()->route('admin.users.index')->with('success', 'Stopped impersonating.');
+        // Leave impersonation and re-login as original user
+        Auth::logout();
+        Auth::login($originalUser);
+
+        return redirect()->route('admin.dashboard')->with('success', 'Stopped impersonating.');
     }
 }

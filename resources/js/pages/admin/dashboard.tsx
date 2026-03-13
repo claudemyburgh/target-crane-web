@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
-import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
-import StatSimple from '@/components/stats/stat-simple';
 import { Users, Activity, Shield, KeyRound } from 'lucide-react';
+import StatSimple from '@/components/stats/stat-simple';
+import { PlaceholderPattern } from '@/components/ui/placeholder-pattern';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 // TODO: Remove deprecated StatsCard import usages elsewhere if any.

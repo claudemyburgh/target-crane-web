@@ -11,6 +11,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Lab404\Impersonate\Models\Impersonate as ImpersonateTrait;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\EloquentSortable\Sortable;
+use Spatie\EloquentSortable\SortableTrait;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -18,7 +20,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Permission\Traits\HasRoles;
 
 #[ObservedBy([UserObserver::class])]
-class User extends Authenticatable implements HasMedia, MustVerifyEmail
+class User extends Authenticatable implements HasMedia, MustVerifyEmail, Sortable
 {
     /**
      * Accessors that should be appended to the model's array form.
@@ -29,8 +31,13 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'avatar_url',
     ];
 
+    public array $sortable = [
+        'order_column_name' => 'order_column',
+        'sort_when_creating' => true,
+    ];
+
     /** @use HasFactory<\\Database\\Factories\\UserFactory> */
-    use HasFactory, HasRoles, ImpersonateTrait, InteractsWithMedia, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, ImpersonateTrait, InteractsWithMedia, Notifiable, SoftDeletes, SortableTrait, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.

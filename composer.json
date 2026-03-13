@@ -17,6 +17,7 @@
         "laravel/reverb": "^1.0",
         "laravel/tinker": "^2.10.1",
         "laravel/wayfinder": "^0.1.9",
+        "spatie/eloquent-sortable": "^5.0",
         "spatie/laravel-activitylog": "^4.12",
         "spatie/laravel-medialibrary": "^11.21",
         "spatie/laravel-permission": "^7.2",

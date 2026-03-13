@@ -1,16 +1,12 @@
 import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
-    flexRender,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
-import {
     ArrowUpDown,
     Ban,
     ChevronsLeft,
     ChevronsRight,
     Eye,
+    Loader2,
     MoreVertical,
     Pencil,
     RotateCcw,
@@ -27,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DataTable } from '@/components/ui/data-table';
 import {
     Dialog,
     DialogContent,
@@ -59,8 +56,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import Wrapper from '@/components/wrapper';
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { usePaginationStore } from '@/store/use-pagination-store';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes/admin';
 import {
@@ -75,6 +70,7 @@ import {
     show,
     unban,
 } from '@/routes/admin/users';
+import { usePaginationStore } from '@/store/use-pagination-store';
 import type { BreadcrumbItem } from '@/types';
 // Wayfinder route helper for impersonate not generated; fallback to literal POST path
 const impersonate = (uuid: string) => `/admin/users/${uuid}/impersonate`;
@@ -104,16 +100,19 @@ export default function AdminUsersIndex({
     can: any;
 }) {
     const { getPerPage, setPerPage } = usePaginationStore();
-    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/admin/users';
+    const currentPath =
+        typeof window !== 'undefined'
+            ? window.location.pathname
+            : '/admin/users';
 
     const [localFilters, setLocalFilters] = React.useState({
         search: filters?.search ?? '',
-        role: filters?.role ?? '',
-        status: filters?.status ?? '',
-        email_verified: filters?.email_verified ?? '',
+        role: filters?.role ?? 'all',
+        status: filters?.status ?? 'all',
+        email_verified: filters?.email_verified ?? 'all',
         page: filters?.page ?? 1,
         per_page: filters?.per_page ?? getPerPage(currentPath, 25),
-        sort: filters?.sort ?? '',
+        sort: filters?.sort ?? 'name',
         direction: filters?.direction ?? 'asc',
     });
 
@@ -126,18 +125,25 @@ export default function AdminUsersIndex({
     const [confirmDeleteUser, setConfirmDeleteUser] =
         React.useState<User | null>(null);
     const [confirmBulkDelete, setConfirmBulkDelete] = React.useState(false);
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const [isBulkDeleting, setIsBulkDeleting] = React.useState(false);
+    const [isBanning, setIsBanning] = React.useState(false);
+    const [bulkActionLoading, setBulkActionLoading] = React.useState<
+        string | null
+    >(null);
     const [banReason, setBanReason] = React.useState('');
     const [banUntil, setBanUntil] = React.useState<string | undefined>('');
 
     const [roleUser, setRoleUser] = React.useState<User | null>(null);
     const [roleValue, setRoleValue] = React.useState('');
+    const [isAssigningRole, setIsAssigningRole] = React.useState(false);
 
     const columns = React.useMemo<ColumnDef<User>[]>(
         () => [
             {
                 id: 'select',
                 header: () => (
-                    <div className="w-px">
+                    <div className="w-2">
                         <Checkbox
                             checked={
                                 Object.keys(rowSelection).length ===
@@ -322,7 +328,7 @@ export default function AdminUsersIndex({
                     if (u.is_banned) {
                         return <Badge variant="secondary">Banned</Badge>;
                     }
-                    return <Badge variant="default">Active</Badge>;
+                    return <Badge variant="outline">Active</Badge>;
                 },
             },
             {
@@ -448,14 +454,6 @@ export default function AdminUsersIndex({
         [data, rowSelection, can],
     );
 
-    const table = useReactTable({
-        data,
-        columns,
-        state: { rowSelection },
-        onRowSelectionChange: setRowSelection,
-        getCoreRowModel: getCoreRowModel(),
-    });
-
     const selectedIds = React.useMemo(
         () =>
             Object.entries(rowSelection)
@@ -464,32 +462,68 @@ export default function AdminUsersIndex({
         [rowSelection],
     );
 
-    const normalize = (f: typeof localFilters) => {
-        const serverDefaultPer = 25; // Must match backend default in UserAdminController@index
-        const role = f.role === 'any' ? '' : f.role;
-        const status = f.status === 'any' ? '' : f.status;
-        const email_verified = f.email_verified === 'any' ? '' : f.email_verified;
-        const sort = f.sort || undefined;
-        // Only include direction if a sort is applied and it's not the default 'asc'
-        const direction = sort && f.direction !== 'asc' ? f.direction : undefined;
+    const normalize = React.useCallback((f: typeof localFilters) => {
+        const serverDefaultPer = 25;
+
+        const filterParams: Record<string, any> = {};
+        if (f.search) {
+            filterParams.search = f.search;
+        }
+        if (f.role && f.role !== 'all') {
+            filterParams.role = f.role;
+        }
+        if (f.status && f.status !== 'all') {
+            filterParams.status = f.status;
+        }
+        if (f.email_verified && f.email_verified !== 'all') {
+            filterParams.email_verified = f.email_verified;
+        }
+
+        const sortFields = ['name', 'email', 'created_at'];
+
         return {
-            search: f.search || undefined,
-            role: role || undefined,
-            status: status || undefined,
-            email_verified: email_verified || undefined,
-            // Only include page when not the default 1
+            ...(Object.keys(filterParams).length > 0
+                ? { filter: filterParams }
+                : {}),
             page: f.page && f.page !== 1 ? f.page : undefined,
-            // Only include per_page when not equal to the server default (25)
-            per_page: f.per_page && f.per_page !== serverDefaultPer ? f.per_page : undefined,
-            sort,
-            direction,
+            per_page:
+                f.per_page && f.per_page !== serverDefaultPer
+                    ? f.per_page
+                    : undefined,
+            ...(f.sort && sortFields.includes(f.sort) ? { sort: f.sort } : {}),
+            ...(f.direction ? { direction: f.direction } : {}),
         } as Record<string, any>;
-    };
+    }, []);
+
+    const localFiltersRef = React.useRef(localFilters);
+    React.useEffect(() => {
+        localFiltersRef.current = localFilters;
+    }, [localFilters]);
+
+    const submitFilters = React.useCallback(
+        (arg?: React.FormEvent | Partial<typeof localFilters>) => {
+            let next: Partial<typeof localFilters> = {};
+            if (arg && 'preventDefault' in arg) {
+                (arg as React.FormEvent).preventDefault();
+            } else if (arg) {
+                next = arg as Partial<typeof localFilters>;
+            }
+            const params = normalize({
+                ...localFiltersRef.current,
+                ...next,
+            });
+            router.get(usersIndex(), params as Record<string, any>, {
+                preserveState: true,
+                preserveScroll: true,
+            });
+        },
+        [normalize],
+    );
 
     const clearFilter = (
         key: 'search' | 'role' | 'status' | 'email_verified',
     ) => {
-        setLocalFilters((f) => ({ ...f, [key]: '', page: 1 }));
+        setLocalFilters((f) => ({ ...f, [key]: 'all', page: 1 }));
     };
 
     const initialSearch = React.useRef(true);
@@ -500,62 +534,54 @@ export default function AdminUsersIndex({
         }
         const id = setTimeout(() => submitFilters(), 400);
         return () => clearTimeout(id);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [localFilters.search]);
-
-    const submitFilters = (
-        arg?: React.FormEvent | Partial<typeof localFilters>,
-    ) => {
-        let next: Partial<typeof localFilters> = {};
-        if (arg && 'preventDefault' in arg) {
-            (arg as React.FormEvent).preventDefault();
-        } else if (arg) {
-            next = arg as Partial<typeof localFilters>;
-        }
-        const params = normalize({
-            ...(localFilters as typeof localFilters),
-            ...next,
-        });
-        router.get(usersIndex(), params as Record<string, any>, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
+    }, [localFilters.search, submitFilters]);
 
     React.useEffect(() => {
-        // Auto-submit when per_page changes
         submitFilters();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [localFilters.per_page]);
-
-    React.useEffect(() => {
-        // Auto-submit when select-based filters or sort change
-        submitFilters();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
+        localFilters.per_page,
         localFilters.role,
         localFilters.status,
         localFilters.email_verified,
         localFilters.sort,
         localFilters.direction,
+        submitFilters,
     ]);
 
     const bulk = (action: string, role?: string) => {
         if (selectedIds.length === 0) return;
+        if (action === 'delete') {
+            setIsBulkDeleting(true);
+        } else {
+            setBulkActionLoading(action);
+        }
         router.post(
             bulkRoute(),
             { action, ids: selectedIds, role },
-            { preserveScroll: true },
+            {
+                preserveScroll: true,
+                onFinish: () => {
+                    if (action === 'delete') {
+                        setIsBulkDeleting(false);
+                        setConfirmBulkDelete(false);
+                    } else {
+                        setBulkActionLoading(null);
+                    }
+                    clearSelection();
+                },
+            },
         );
     };
 
     const doBan = () => {
         if (!banUser) return;
+        setIsBanning(true);
         router.post(
             banRoute(banUser!.uuid),
             { reason: banReason, until: banUntil || null },
             {
                 onSuccess: () => setBanUser(null),
+                onFinish: () => setIsBanning(false),
                 preserveScroll: true,
             },
         );
@@ -563,11 +589,13 @@ export default function AdminUsersIndex({
 
     const doAssignRole = () => {
         if (!roleUser || !roleValue) return;
+        setIsAssigningRole(true);
         router.post(
             assignRole(roleUser!.uuid),
             { role: roleValue },
             {
                 onSuccess: () => setRoleUser(null),
+                onFinish: () => setIsAssigningRole(false),
                 preserveScroll: true,
             },
         );
@@ -635,7 +663,7 @@ export default function AdminUsersIndex({
                                 <SelectValue placeholder="Role" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="any">Any role</SelectItem>
+                                <SelectItem value="all">All</SelectItem>
                                 {roles.map((r) => (
                                     <SelectItem
                                         className={`capitalize`}
@@ -665,7 +693,7 @@ export default function AdminUsersIndex({
                                 <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="any">Any status</SelectItem>
+                                <SelectItem value="all">All</SelectItem>
                                 <SelectItem value="active">Active</SelectItem>
                                 <SelectItem value="banned">Banned</SelectItem>
                                 <SelectItem value="deleted">Deleted</SelectItem>
@@ -689,7 +717,7 @@ export default function AdminUsersIndex({
                                 <SelectValue placeholder="Verified" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="any">Any</SelectItem>
+                                <SelectItem value="all">All</SelectItem>
                                 <SelectItem value="yes">Yes</SelectItem>
                                 <SelectItem value="no">No</SelectItem>
                             </SelectContent>
@@ -705,12 +733,12 @@ export default function AdminUsersIndex({
                             const defaultPerPage = getPerPage(currentPath, 25);
                             const reset = {
                                 search: '',
-                                role: '',
-                                status: '',
-                                email_verified: '',
+                                role: 'all',
+                                status: 'all',
+                                email_verified: 'all',
                                 page: 1,
                                 per_page: defaultPerPage,
-                                sort: '',
+                                sort: 'name',
                                 direction: 'asc',
                             } as typeof localFilters;
                             setLocalFilters(reset);
@@ -736,8 +764,7 @@ export default function AdminUsersIndex({
                                     per_page: val,
                                     page: 1,
                                 }));
-                            }
-                            }
+                            }}
                         >
                             <SelectTrigger className="h-9 min-w-28">
                                 <SelectValue placeholder="Per page" />
@@ -769,7 +796,7 @@ export default function AdminUsersIndex({
                             </Button>
                         </Badge>
                     )}
-                    {localFilters.role && localFilters.role !== 'any' && (
+                    {localFilters.role && localFilters.role !== 'all' && (
                         <Badge variant="secondary" className="pr-1">
                             Role: {localFilters.role}
                             <Button
@@ -782,7 +809,7 @@ export default function AdminUsersIndex({
                             </Button>
                         </Badge>
                     )}
-                    {localFilters.status && localFilters.status !== 'any' && (
+                    {localFilters.status && localFilters.status !== 'all' && (
                         <Badge variant="secondary" className="pr-1">
                             Status: {localFilters.status}
                             <Button
@@ -796,7 +823,7 @@ export default function AdminUsersIndex({
                         </Badge>
                     )}
                     {localFilters.email_verified &&
-                        localFilters.email_verified !== 'any' && (
+                        localFilters.email_verified !== 'all' && (
                             <Badge variant="secondary" className="pr-1">
                                 Verified: {localFilters.email_verified}
                                 <Button
@@ -812,11 +839,12 @@ export default function AdminUsersIndex({
                             </Badge>
                         )}
                     {!localFilters.search &&
-                        (!localFilters.role || localFilters.role === 'any') &&
-                        (!localFilters.status ||
-                            localFilters.status === 'any') &&
-                        (!localFilters.email_verified ||
-                            localFilters.email_verified === 'any') && (
+                        (localFilters.role === '' ||
+                            localFilters.role === 'all') &&
+                        (localFilters.status === '' ||
+                            localFilters.status === 'all') &&
+                        (localFilters.email_verified === '' ||
+                            localFilters.email_verified === 'all') && (
                             <span className="text-sm text-muted-foreground">
                                 No active filters
                             </span>
@@ -832,6 +860,7 @@ export default function AdminUsersIndex({
                             size="sm"
                             variant="secondary"
                             onClick={() => setConfirmBulkDelete(true)}
+                            disabled={isBulkDeleting || !!bulkActionLoading}
                         >
                             Delete
                         </Button>
@@ -839,27 +868,62 @@ export default function AdminUsersIndex({
                             size="sm"
                             variant="secondary"
                             onClick={() => bulk('restore')}
+                            disabled={!!bulkActionLoading}
                         >
-                            Restore
+                            {bulkActionLoading === 'restore' ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Restoring...
+                                </>
+                            ) : (
+                                'Restore'
+                            )}
                         </Button>
                         <Button
                             size="sm"
                             variant="secondary"
                             onClick={() => bulk('ban')}
+                            disabled={!!bulkActionLoading}
                         >
-                            Ban
+                            {bulkActionLoading === 'ban' ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Banning...
+                                </>
+                            ) : (
+                                'Ban'
+                            )}
                         </Button>
                         <Button
                             size="sm"
                             variant="secondary"
                             onClick={() => bulk('unban')}
+                            disabled={!!bulkActionLoading}
                         >
-                            Unban
+                            {bulkActionLoading === 'unban' ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Unbanning...
+                                </>
+                            ) : (
+                                'Unban'
+                            )}
                         </Button>
                         <Dialog>
                             <DialogTrigger asChild>
-                                <Button size="sm" variant="secondary">
-                                    Assign role…
+                                <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    disabled={!!bulkActionLoading}
+                                >
+                                    {bulkActionLoading === 'assign-role' ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Assigning...
+                                        </>
+                                    ) : (
+                                        'Assign role…'
+                                    )}
                                 </Button>
                             </DialogTrigger>
                             <DialogContent>
@@ -873,6 +937,9 @@ export default function AdminUsersIndex({
                                         value={roleValue || 'any'}
                                         onValueChange={(v) =>
                                             setRoleValue(v === 'any' ? '' : v)
+                                        }
+                                        disabled={
+                                            bulkActionLoading === 'assign-role'
                                         }
                                     >
                                         <SelectTrigger className="min-w-48">
@@ -899,9 +966,19 @@ export default function AdminUsersIndex({
                                             bulk('assign-role', roleValue);
                                             setRoleValue('');
                                         }}
-                                        disabled={!roleValue}
+                                        disabled={
+                                            !roleValue ||
+                                            bulkActionLoading === 'assign-role'
+                                        }
                                     >
-                                        Assign
+                                        {bulkActionLoading === 'assign-role' ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Assigning...
+                                            </>
+                                        ) : (
+                                            'Assign'
+                                        )}
                                     </Button>
                                 </div>
                             </DialogContent>
@@ -916,237 +993,193 @@ export default function AdminUsersIndex({
                     </div>
                 )}
 
-                <div className="w-full overflow-x-auto rounded border">
-                    <table className="w-full">
-                        <thead>
-                            {table.getHeaderGroups().map((hg) => (
-                                <tr key={hg.id}>
-                                    {hg.headers.map((header) => (
-                                        <th
-                                            key={header.id}
-                                            className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500 uppercase"
-                                        >
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
-                                                      header.getContext(),
-                                                  )}
-                                        </th>
-                                    ))}
-                                </tr>
-                            ))}
-                        </thead>
-                        <tbody>
-                            {table.getRowModel().rows.length === 0 ? (
-                                <tr>
-                                    <td colSpan={table.getAllLeafColumns().length} className="p-6">
-                                        <Empty className="border">
-                                            <EmptyHeader>
-                                                <EmptyMedia variant="icon">
-                                                    <Search className="size-5" />
-                                                </EmptyMedia>
-                                                <EmptyTitle>No users found</EmptyTitle>
-                                                <EmptyDescription>
-                                                    Try adjusting your filters or clearing them to see more results.
-                                                </EmptyDescription>
-                                            </EmptyHeader>
-                                        </Empty>
-                                    </td>
-                                </tr>
-                            ) : (
-                                table.getRowModel().rows.map((row) => (
-                                    <tr key={row.id} className="border-t">
-                                        {row.getVisibleCells().map((cell) => (
-                                            <td
-                                                key={cell.id}
-                                                className="px-3 py-2 text-sm"
-                                            >
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
-                                                )}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                <div className="mt-0 flex items-center justify-center gap-2">
-                    <Pagination>
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationLink
-                                    aria-label="First"
-                                    href={
-                                        usersIndex({
-                                            mergeQuery: {
-                                                ...normalize(localFilters),
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    rowSelection={rowSelection}
+                    onRowSelectionChange={setRowSelection}
+                    bulkRoute={bulkRoute}
+                    reorderable={true}
+                    emptyMessage="No users found"
+                />
+                {(users?.last_page ?? 1) > 1 && (
+                    <div className="mt-0 flex items-center justify-center gap-2">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationLink
+                                        aria-label="First"
+                                        href={
+                                            usersIndex({
+                                                mergeQuery: {
+                                                    ...normalize(localFilters),
+                                                    page: 1,
+                                                },
+                                            }).url
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setLocalFilters((f) => ({
+                                                ...f,
                                                 page: 1,
-                                            },
-                                        }).url
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setLocalFilters((f) => ({
-                                            ...f,
-                                            page: 1,
-                                        }));
-                                        submitFilters({ page: 1 });
-                                    }}
-                                    data-disabled={users?.current_page <= 1}
-                                >
-                                    <ChevronsLeft className={`text-lg`} />
-                                </PaginationLink>
-                            </PaginationItem>
-                            <PaginationItem>
-                                <PaginationPrevious
-                                    href={
-                                        usersIndex({
-                                            mergeQuery: {
-                                                ...normalize(localFilters),
-                                                page: Math.max(
-                                                    1,
-                                                    (users?.current_page ?? 1) -
+                                            }));
+                                            submitFilters({ page: 1 });
+                                        }}
+                                        data-disabled={users?.current_page <= 1}
+                                    >
+                                        <ChevronsLeft className={`text-lg`} />
+                                    </PaginationLink>
+                                </PaginationItem>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        href={
+                                            usersIndex({
+                                                mergeQuery: {
+                                                    ...normalize(localFilters),
+                                                    page: Math.max(
                                                         1,
-                                                ),
-                                            },
-                                        }).url
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        const page = Math.max(
-                                            1,
-                                            (users?.current_page ?? 1) - 1,
+                                                        (users?.current_page ??
+                                                            1) - 1,
+                                                    ),
+                                                },
+                                            }).url
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            const page = Math.max(
+                                                1,
+                                                (users?.current_page ?? 1) - 1,
+                                            );
+                                            setLocalFilters((f) => ({
+                                                ...f,
+                                                page,
+                                            }));
+                                            submitFilters({ page });
+                                        }}
+                                        data-disabled={users?.current_page <= 1}
+                                    />
+                                </PaginationItem>
+                                {(() => {
+                                    const current = users?.current_page ?? 1;
+                                    const last = users?.last_page ?? 1;
+                                    const start = Math.max(1, current - 3);
+                                    const end = Math.min(last, current + 3);
+                                    const pages: number[] = [];
+                                    for (let p = start; p <= end; p++)
+                                        pages.push(p);
+                                    const items = [] as React.ReactNode[];
+                                    if (start > 1) {
+                                        items.push(
+                                            <PaginationItem key="start-ellipsis">
+                                                <PaginationEllipsis />
+                                            </PaginationItem>,
                                         );
-                                        setLocalFilters((f) => ({
-                                            ...f,
-                                            page,
-                                        }));
-                                        submitFilters({ page });
-                                    }}
-                                    data-disabled={users?.current_page <= 1}
-                                />
-                            </PaginationItem>
-                            {(() => {
-                                const current = users?.current_page ?? 1;
-                                const last = users?.last_page ?? 1;
-                                const start = Math.max(1, current - 3);
-                                const end = Math.min(last, current + 3);
-                                const pages: number[] = [];
-                                for (let p = start; p <= end; p++)
-                                    pages.push(p);
-                                const items = [] as React.ReactNode[];
-                                if (start > 1) {
-                                    items.push(
-                                        <PaginationItem key="start-ellipsis">
-                                            <PaginationEllipsis />
-                                        </PaginationItem>,
-                                    );
-                                }
-                                for (const page of pages) {
-                                    items.push(
-                                        <PaginationItem key={page}>
-                                            <PaginationLink
-                                                isActive={page === current}
-                                                href={
-                                                    usersIndex({
-                                                        mergeQuery: {
-                                                            ...normalize(
-                                                                localFilters,
-                                                            ),
-                                                            page,
-                                                        },
-                                                    }).url
-                                                }
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    setLocalFilters((f) => ({
-                                                        ...f,
-                                                        page,
-                                                    }));
-                                                    submitFilters({ page });
-                                                }}
-                                            >
-                                                {page}
-                                            </PaginationLink>
-                                        </PaginationItem>,
-                                    );
-                                }
-                                if (end < last) {
-                                    items.push(
-                                        <PaginationItem key="end-ellipsis">
-                                            <PaginationEllipsis />
-                                        </PaginationItem>,
-                                    );
-                                }
-                                return items;
-                            })()}
-                            <PaginationItem>
-                                <PaginationNext
-                                    href={
-                                        usersIndex({
-                                            mergeQuery: {
-                                                ...normalize(localFilters),
-                                                page: Math.min(
-                                                    users?.last_page ?? 1,
-                                                    (users?.current_page ?? 1) +
-                                                        1,
-                                                ),
-                                            },
-                                        }).url
                                     }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        const last = users?.last_page ?? 1;
-                                        const page = Math.min(
-                                            last,
-                                            (users?.current_page ?? 1) + 1,
+                                    for (const page of pages) {
+                                        items.push(
+                                            <PaginationItem key={page}>
+                                                <PaginationLink
+                                                    isActive={page === current}
+                                                    href={
+                                                        usersIndex({
+                                                            mergeQuery: {
+                                                                ...normalize(
+                                                                    localFilters,
+                                                                ),
+                                                                page,
+                                                            },
+                                                        }).url
+                                                    }
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setLocalFilters(
+                                                            (f) => ({
+                                                                ...f,
+                                                                page,
+                                                            }),
+                                                        );
+                                                        submitFilters({ page });
+                                                    }}
+                                                >
+                                                    {page}
+                                                </PaginationLink>
+                                            </PaginationItem>,
                                         );
-                                        setLocalFilters((f) => ({
-                                            ...f,
-                                            page,
-                                        }));
-                                        submitFilters({ page });
-                                    }}
-                                    data-disabled={
-                                        users?.current_page >= users?.last_page
                                     }
-                                />
-                            </PaginationItem>
-                            <PaginationItem>
-                                <PaginationLink
-                                    aria-label="Last"
-                                    href={
-                                        usersIndex({
-                                            mergeQuery: {
-                                                ...normalize(localFilters),
-                                                page: users?.last_page ?? 1,
-                                            },
-                                        }).url
+                                    if (end < last) {
+                                        items.push(
+                                            <PaginationItem key="end-ellipsis">
+                                                <PaginationEllipsis />
+                                            </PaginationItem>,
+                                        );
                                     }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        const page = users?.last_page ?? 1;
-                                        setLocalFilters((f) => ({
-                                            ...f,
-                                            page,
-                                        }));
-                                        submitFilters({ page });
-                                    }}
-                                    data-disabled={
-                                        users?.current_page >= users?.last_page
-                                    }
-                                >
-                                    <ChevronsRight className={`text-lg`} />
-                                </PaginationLink>
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
-                </div>
+                                    return items;
+                                })()}
+                                <PaginationItem>
+                                    <PaginationNext
+                                        href={
+                                            usersIndex({
+                                                mergeQuery: {
+                                                    ...normalize(localFilters),
+                                                    page: Math.min(
+                                                        users?.last_page ?? 1,
+                                                        (users?.current_page ??
+                                                            1) + 1,
+                                                    ),
+                                                },
+                                            }).url
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            const last = users?.last_page ?? 1;
+                                            const page = Math.min(
+                                                last,
+                                                (users?.current_page ?? 1) + 1,
+                                            );
+                                            setLocalFilters((f) => ({
+                                                ...f,
+                                                page,
+                                            }));
+                                            submitFilters({ page });
+                                        }}
+                                        data-disabled={
+                                            users?.current_page >=
+                                            users?.last_page
+                                        }
+                                    />
+                                </PaginationItem>
+                                <PaginationItem>
+                                    <PaginationLink
+                                        aria-label="Last"
+                                        href={
+                                            usersIndex({
+                                                mergeQuery: {
+                                                    ...normalize(localFilters),
+                                                    page: users?.last_page ?? 1,
+                                                },
+                                            }).url
+                                        }
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            const page = users?.last_page ?? 1;
+                                            setLocalFilters((f) => ({
+                                                ...f,
+                                                page,
+                                            }));
+                                            submitFilters({ page });
+                                        }}
+                                        data-disabled={
+                                            users?.current_page >=
+                                            users?.last_page
+                                        }
+                                    >
+                                        <ChevronsRight className={`text-lg`} />
+                                    </PaginationLink>
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
+                )}
             </Wrapper>
 
             <Dialog
@@ -1170,6 +1203,7 @@ export default function AdminUsersIndex({
                             <Button
                                 variant="ghost"
                                 onClick={() => setConfirmDeleteUser(null)}
+                                disabled={isDeleting}
                             >
                                 Cancel
                             </Button>
@@ -1177,18 +1211,29 @@ export default function AdminUsersIndex({
                                 variant="destructive"
                                 onClick={() => {
                                     if (confirmDeleteUser) {
+                                        setIsDeleting(true);
                                         router.delete(
                                             destroy(confirmDeleteUser.uuid),
                                             {
                                                 onSuccess: () =>
                                                     setConfirmDeleteUser(null),
+                                                onFinish: () =>
+                                                    setIsDeleting(false),
                                                 preserveScroll: true,
                                             },
                                         );
                                     }
                                 }}
+                                disabled={isDeleting}
                             >
-                                Confirm delete
+                                {isDeleting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    'Confirm delete'
+                                )}
                             </Button>
                         </div>
                     </div>
@@ -1216,18 +1261,25 @@ export default function AdminUsersIndex({
                             <Button
                                 variant="ghost"
                                 onClick={() => setConfirmBulkDelete(false)}
+                                disabled={isBulkDeleting}
                             >
                                 Cancel
                             </Button>
                             <Button
                                 variant="destructive"
-                                onClick={() => {
-                                    setConfirmBulkDelete(false);
-                                    bulk('delete');
-                                }}
-                                disabled={selectedIds.length === 0}
+                                onClick={() => bulk('delete')}
+                                disabled={
+                                    selectedIds.length === 0 || isBulkDeleting
+                                }
                             >
-                                Confirm delete
+                                {isBulkDeleting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Deleting...
+                                    </>
+                                ) : (
+                                    'Confirm delete'
+                                )}
                             </Button>
                         </div>
                     </div>
@@ -1267,11 +1319,22 @@ export default function AdminUsersIndex({
                             <Button
                                 variant="ghost"
                                 onClick={() => setBanUser(null)}
+                                disabled={isBanning}
                             >
                                 Cancel
                             </Button>
-                            <Button onClick={doBan} disabled={!banReason}>
-                                Confirm ban
+                            <Button
+                                onClick={doBan}
+                                disabled={!banReason || isBanning}
+                            >
+                                {isBanning ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Banning...
+                                    </>
+                                ) : (
+                                    'Confirm ban'
+                                )}
                             </Button>
                         </div>
                     </div>
@@ -1296,6 +1359,7 @@ export default function AdminUsersIndex({
                             onValueChange={(v) =>
                                 setRoleValue(v === 'any' ? '' : v)
                             }
+                            disabled={isAssigningRole}
                         >
                             <SelectTrigger className="min-w-48">
                                 <SelectValue placeholder="Choose a role" />
@@ -1315,8 +1379,18 @@ export default function AdminUsersIndex({
                                 ))}
                             </SelectContent>
                         </Select>
-                        <Button onClick={doAssignRole} disabled={!roleValue}>
-                            Assign
+                        <Button
+                            onClick={doAssignRole}
+                            disabled={!roleValue || isAssigningRole}
+                        >
+                            {isAssigningRole ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Assigning...
+                                </>
+                            ) : (
+                                'Assign'
+                            )}
                         </Button>
                     </div>
                 </DialogContent>

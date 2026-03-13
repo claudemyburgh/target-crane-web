@@ -1,10 +1,10 @@
 import { AppContent } from '@/components/app-content';
 import { AppShell } from '@/components/app-shell';
-import { Toaster } from '@/components/ui/sonner';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
-import type { AppLayoutProps } from '@/types';
 import { ImpersonationBanner } from '@/components/impersonation-banner';
+import { Toaster } from '@/components/ui/sonner';
+import type { AppLayoutProps } from '@/types';
 
 export default function AppSidebarLayout({
     children,

@@ -4,8 +4,6 @@ use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\TrailerController;
 use App\Http\Controllers\Admin\UserAdminController;
-use App\Http\Middleware\EnsureUserHasPermission;
-use App\Http\Middleware\EnsureUserHasRole;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,11 +12,12 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'verified'])->prefix('admin')->as('admin.')->group(function () {
-    Route::post('/impersonate/stop', [ImpersonationController::class, 'stop'])
-        ->name('impersonate.stop')
-        ->withoutMiddleware([EnsureUserHasRole::class, EnsureUserHasPermission::class]);
+// Impersonation stop route - must be accessible when impersonating (user loses admin role)
+Route::post('/admin/impersonate/stop', [ImpersonationController::class, 'stop'])
+    ->name('admin.impersonate.stop')
+    ->middleware(['auth', 'verified']);
 
+Route::middleware(['auth', 'verified'])->prefix('admin')->as('admin.')->group(function () {
     Route::resource('trailers', TrailerController::class);
     Route::post('trailers/{trailer}/restore', [TrailerController::class, 'restore'])->name('trailers.restore');
     Route::delete('trailers/{trailer}/force-delete', [TrailerController::class, 'forceDelete'])->name('trailers.force-delete');

@@ -7,6 +7,9 @@ use App\Http\Requests\TrailerFormRequest;
 use App\Models\Trailer;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class TrailerController extends Controller
 {
@@ -15,41 +18,45 @@ class TrailerController extends Controller
         $this->authorize('viewAny', Trailer::class);
 
         $perPage = $request->integer('per_page', 25);
-        $search = $request->string('search', '');
-        $status = $request->string('status', '');
-        $sort = $request->string('sort', 'created_at');
-        $direction = $request->string('direction', 'desc');
 
-        $query = Trailer::query();
-
-        if ($status === 'deleted') {
-            $query->onlyTrashed();
-        } elseif ($status === 'active') {
-            $query->withoutTrashed();
-        }
-
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('fleet_number', 'like', "%{$search}%")
-                    ->orWhere('registration_number', 'like', "%{$search}%")
-                    ->orWhere('brand_name', 'like', "%{$search}%");
-            });
-        }
-
-        $query->orderBy($sort, $direction);
-
-        $trailers = $query->paginate($perPage)->onEachSide(3)->withQueryString();
+        $trailers = QueryBuilder::for(Trailer::class)
+            ->allowedFilters([
+                AllowedFilter::partial('search', 'fleet_number'),
+                AllowedFilter::partial('search', 'registration_number'),
+                AllowedFilter::partial('search', 'brand_name'),
+                AllowedFilter::exact('brand', 'brand_name'),
+                AllowedFilter::callback('status', function ($query, $value) {
+                    if ($value === 'deleted') {
+                        $query->onlyTrashed();
+                    } elseif ($value === 'active') {
+                        $query->withoutTrashed();
+                    }
+                }),
+            ])
+            ->allowedSorts([
+                'fleet_number',
+                'registration_number',
+                'brand_name',
+                'axles_amount',
+                'license_expiry_date',
+                'order_column',
+                AllowedSort::field('order', 'order_column'),
+            ])
+            ->defaultSort('order_column')
+            ->paginate($perPage)
+            ->onEachSide(3)
+            ->withQueryString();
 
         $brands = Trailer::distinct()->pluck('brand_name')->sort()->values();
 
         return Inertia::render('admin/trailers/index', [
             'trailers' => $trailers,
             'filters' => [
-                'search' => $search,
-                'status' => $status,
+                'search' => $request->string('search', ''),
+                'status' => $request->string('status', ''),
                 'brand' => $request->string('brand', ''),
-                'sort' => $sort,
-                'direction' => $direction,
+                'sort' => $request->string('sort', 'order_column'),
+                'direction' => $request->string('direction', 'asc'),
                 'per_page' => $perPage,
                 'page' => $request->integer('page', 1),
             ],
@@ -150,6 +157,16 @@ class TrailerController extends Controller
         $action = $request->string('action');
         $ids = $request->array('ids');
 
+        match ((string) $action) {
+            'reorder' => Trailer::setNewOrder($ids),
+            default => $this->handleDefaultBulkAction((string) $action, $ids),
+        };
+
+        return to_route('admin.trailers.index');
+    }
+
+    private function handleDefaultBulkAction(string $action, array $ids): void
+    {
         $trailers = Trailer::withTrashed()->whereIn('id', $ids);
 
         match ($action) {
@@ -158,7 +175,5 @@ class TrailerController extends Controller
             'force-delete' => $trailers->forceDelete(),
             default => null,
         };
-
-        return to_route('admin.trailers.index');
     }
 }

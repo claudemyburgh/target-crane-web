@@ -169,5 +169,9 @@ class UserService
                 default => null,
             };
         }
+
+        if ($action === 'reorder') {
+            User::setNewOrder($ids);
+        }
     }
 }
