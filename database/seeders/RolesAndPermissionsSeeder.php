@@ -84,6 +84,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'download backups',
             'delete backups',
             'manage backup schedule',
+
+            // Trailer Loaded Report permissions
+            'view trailer loaded reports',
+            'create trailer loaded reports',
+            'delete trailer loaded reports',
         ];
 
         // Create permissions for both web and api guards
@@ -122,6 +127,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'upload media',
                 'delete media',
                 'view activity log',
+                'view trailer loaded reports',
             ],
             'user' => [
                 'view dashboard',

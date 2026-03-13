@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Admin\TrailerController;
+use App\Http\Controllers\Admin\TrailerLoadedReportController;
 use App\Http\Controllers\Admin\UserAdminController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,9 +23,17 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->as('admin.')->group(fu
     Route::post('trailers/{trailer}/restore', [TrailerController::class, 'restore'])->name('trailers.restore');
     Route::delete('trailers/{trailer}/force-delete', [TrailerController::class, 'forceDelete'])->name('trailers.force-delete');
     Route::post('trailers/bulk', [TrailerController::class, 'bulk'])->name('trailers.bulk');
+
+    // Trailer Loaded Reports - all authenticated users can view
+    Route::get('trailer-loaded-reports', [TrailerLoadedReportController::class, 'index'])->name('trailer-loaded-reports.index');
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admin.')->group(function () {
+
+    // Trailer Loaded Reports - admin only for create/delete
+    Route::get('trailer-loaded-reports/create', [TrailerLoadedReportController::class, 'create'])->name('trailer-loaded-reports.create');
+    Route::post('trailer-loaded-reports', [TrailerLoadedReportController::class, 'store'])->name('trailer-loaded-reports.store');
+    Route::delete('trailer-loaded-reports/{trailerLoadedReport}', [TrailerLoadedReportController::class, 'destroy'])->name('trailer-loaded-reports.destroy');
 
     Route::get('/dashboard', DashboardAdminController::class)->name('dashboard');
 

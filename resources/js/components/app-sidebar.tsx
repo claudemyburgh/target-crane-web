@@ -89,6 +89,11 @@ export function AppSidebar() {
                       href: trailersIndex(),
                       icon: Truck,
                   },
+                  {
+                      title: 'Trailer Reports',
+                      href: '/admin/trailer-loaded-reports',
+                      icon: Truck,
+                  },
               ]
             : mainNavItemsBase;
 
