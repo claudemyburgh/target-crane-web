@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Brush, Loader2, Plus, Trash2 } from 'lucide-react';
 import * as React from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 import { index, store } from '@/routes/admin/trailer-loaded-reports';
@@ -222,7 +227,7 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                                             <th className="px-4 py-3 text-left font-medium">
                                                 Location
                                             </th>
-                                            <th className="px-4 py-3 text-left font-medium">
+                                            <th className="min-w-[300px] px-4 py-3 text-left font-medium">
                                                 Comment
                                             </th>
                                             <th className="w-20 px-4 py-3 text-left font-medium">
@@ -277,21 +282,41 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                                                         </Select>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <Input
+                                                        <Select
                                                             value={
-                                                                load.registration_number
+                                                                load.trailer_id
                                                             }
-                                                            onChange={(e) =>
-                                                                updateLoad(
+                                                            onValueChange={(
+                                                                value,
+                                                            ) =>
+                                                                handleTrailerSelect(
                                                                     index,
-                                                                    'registration_number',
-                                                                    e.target
-                                                                        .value,
+                                                                    value,
                                                                 )
                                                             }
-                                                            placeholder="Reg #"
-                                                            className="h-8 w-32"
-                                                        />
+                                                        >
+                                                            <SelectTrigger className="h-8 w-40">
+                                                                <SelectValue placeholder="Select reg #" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {availableTrailers.map(
+                                                                    (
+                                                                        trailer,
+                                                                    ) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                trailer.id
+                                                                            }
+                                                                            value={trailer.id.toString()}
+                                                                        >
+                                                                            {
+                                                                                trailer.registration_number
+                                                                            }
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <Input
@@ -337,24 +362,61 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                                                                 )
                                                             }
                                                             placeholder="Comment"
-                                                            className="h-8"
+                                                            className="h-8 min-w-[300px]"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                removeRow(index)
-                                                            }
-                                                            disabled={
-                                                                loads.length ===
-                                                                1
-                                                            }
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        <div className="flex items-center gap-1">
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        onClick={() =>
+                                                                            updateLoad(
+                                                                                index,
+                                                                                'loaded',
+                                                                                'Empty',
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <Brush className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    Mark as
+                                                                    Empty
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                            <Tooltip>
+                                                                <TooltipTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        onClick={() =>
+                                                                            removeRow(
+                                                                                index,
+                                                                            )
+                                                                        }
+                                                                        disabled={
+                                                                            loads.length ===
+                                                                            1
+                                                                        }
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    Remove row
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
