@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Brush, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
 import * as React from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
         trailer_id: trailer.id.toString(),
         fleet_number: trailer.fleet_number,
         registration_number: trailer.registration_number,
-        loaded: '',
+        loaded: 'Empty',
         location: '',
         comment: '',
     }));
@@ -79,7 +79,7 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                 trailer_id: '',
                 fleet_number: '',
                 registration_number: '',
-                loaded: '',
+                loaded: 'Empty',
                 location: '',
                 comment: '',
             },
@@ -119,11 +119,43 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
         setIsSubmitting(true);
         setErrors({});
 
-        const missingTrailer = loads.some((load) => !load.trailer_id);
-        if (missingTrailer) {
-            setErrors({
-                'loads.0.trailer_id': 'Please select a trailer for each row',
-            });
+        const newErrors: Record<string, string> = {};
+        let hasErrors = false;
+
+        for (let i = 0; i < loads.length; i++) {
+            if (!loads[i].fleet_number.trim()) {
+                newErrors[`loads.${i}.fleet_number`] =
+                    'Fleet number is required';
+                hasErrors = true;
+            }
+            if (!loads[i].registration_number.trim()) {
+                newErrors[`loads.${i}.registration_number`] =
+                    'Registration number is required';
+                hasErrors = true;
+            }
+            if (!loads[i].loaded.trim()) {
+                newErrors[`loads.${i}.loaded`] = 'Loaded status is required';
+                hasErrors = true;
+            }
+            if (!loads[i].location.trim()) {
+                newErrors[`loads.${i}.location`] = 'Location is required';
+                hasErrors = true;
+            }
+        }
+
+        const seen = new Set<string>();
+        for (let i = 0; i < loads.length; i++) {
+            const key = `${loads[i].fleet_number}-${loads[i].registration_number}`;
+            if (seen.has(key)) {
+                newErrors[`loads.${i}.fleet_number`] =
+                    'Duplicate trailer entry';
+                hasErrors = true;
+            }
+            seen.add(key);
+        }
+
+        if (hasErrors) {
+            setErrors(newErrors);
             setIsSubmitting(false);
             return;
         }
@@ -132,7 +164,7 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
             fleet_number: load.fleet_number,
             registration_number: load.registration_number,
             loaded: load.loaded,
-            location: load.location || null,
+            location: load.location,
             comment: load.comment || null,
         }));
 
@@ -216,16 +248,28 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                                     <thead>
                                         <tr className="border-b bg-muted/50 text-sm">
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Fleet Number
+                                                Fleet Number{' '}
+                                                <span className="text-destructive">
+                                                    *
+                                                </span>
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Registration Number
+                                                Registration Number{' '}
+                                                <span className="text-destructive">
+                                                    *
+                                                </span>
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Loaded
+                                                Loaded{' '}
+                                                <span className="text-destructive">
+                                                    *
+                                                </span>
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Location
+                                                Location{' '}
+                                                <span className="text-destructive">
+                                                    *
+                                                </span>
                                             </th>
                                             <th className="min-w-[300px] px-4 py-3 text-left font-medium">
                                                 Comment
@@ -245,110 +289,237 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                                                     className="border-b"
                                                 >
                                                     <td className="px-4 py-3">
-                                                        <Select
-                                                            value={
-                                                                load.trailer_id
-                                                            }
-                                                            onValueChange={(
-                                                                value,
-                                                            ) =>
-                                                                handleTrailerSelect(
-                                                                    index,
+                                                        {availableTrailers.length >
+                                                        0 ? (
+                                                            <Select
+                                                                value={
+                                                                    load.trailer_id
+                                                                }
+                                                                onValueChange={(
                                                                     value,
-                                                                )
-                                                            }
-                                                        >
-                                                            <SelectTrigger className="h-8 w-40">
-                                                                <SelectValue placeholder="Select fleet #" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {availableTrailers.map(
-                                                                    (
-                                                                        trailer,
-                                                                    ) => (
-                                                                        <SelectItem
-                                                                            key={
-                                                                                trailer.id
-                                                                            }
-                                                                            value={trailer.id.toString()}
-                                                                        >
-                                                                            {
-                                                                                trailer.fleet_number
-                                                                            }
-                                                                        </SelectItem>
-                                                                    ),
+                                                                ) =>
+                                                                    handleTrailerSelect(
+                                                                        index,
+                                                                        value,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <SelectTrigger className="h-8 w-40">
+                                                                    <SelectValue placeholder="Select fleet #" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {availableTrailers.map(
+                                                                        (
+                                                                            trailer,
+                                                                        ) => (
+                                                                            <SelectItem
+                                                                                key={
+                                                                                    trailer.id
+                                                                                }
+                                                                                value={trailer.id.toString()}
+                                                                            >
+                                                                                {
+                                                                                    trailer.fleet_number
+                                                                                }
+                                                                            </SelectItem>
+                                                                        ),
+                                                                    )}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        ) : (
+                                                            <div>
+                                                                <Input
+                                                                    value={
+                                                                        load.fleet_number
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        updateLoad(
+                                                                            index,
+                                                                            'fleet_number',
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                    placeholder="Fleet #"
+                                                                    className="h-8 w-40"
+                                                                />
+                                                                {errors[
+                                                                    `loads.${index}.fleet_number`
+                                                                ] && (
+                                                                    <p className="text-sm text-destructive">
+                                                                        {
+                                                                            errors[
+                                                                                `loads.${index}.fleet_number`
+                                                                            ]
+                                                                        }
+                                                                    </p>
                                                                 )}
-                                                            </SelectContent>
-                                                        </Select>
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <Select
-                                                            value={
-                                                                load.trailer_id
-                                                            }
-                                                            onValueChange={(
-                                                                value,
-                                                            ) =>
-                                                                handleTrailerSelect(
-                                                                    index,
+                                                        {availableTrailers.length >
+                                                        0 ? (
+                                                            <Select
+                                                                value={
+                                                                    load.trailer_id
+                                                                }
+                                                                onValueChange={(
                                                                     value,
-                                                                )
-                                                            }
-                                                        >
-                                                            <SelectTrigger className="h-8 w-40">
-                                                                <SelectValue placeholder="Select reg #" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {availableTrailers.map(
-                                                                    (
-                                                                        trailer,
-                                                                    ) => (
-                                                                        <SelectItem
-                                                                            key={
-                                                                                trailer.id
-                                                                            }
-                                                                            value={trailer.id.toString()}
-                                                                        >
-                                                                            {
-                                                                                trailer.registration_number
-                                                                            }
-                                                                        </SelectItem>
-                                                                    ),
+                                                                ) =>
+                                                                    handleTrailerSelect(
+                                                                        index,
+                                                                        value,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <SelectTrigger className="h-8 w-40">
+                                                                    <SelectValue placeholder="Select reg #" />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {availableTrailers.map(
+                                                                        (
+                                                                            trailer,
+                                                                        ) => (
+                                                                            <SelectItem
+                                                                                key={
+                                                                                    trailer.id
+                                                                                }
+                                                                                value={trailer.id.toString()}
+                                                                            >
+                                                                                {
+                                                                                    trailer.registration_number
+                                                                                }
+                                                                            </SelectItem>
+                                                                        ),
+                                                                    )}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        ) : (
+                                                            <div>
+                                                                <Input
+                                                                    value={
+                                                                        load.registration_number
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        updateLoad(
+                                                                            index,
+                                                                            'registration_number',
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                    placeholder="Reg #"
+                                                                    className="h-8 w-40"
+                                                                />
+                                                                {errors[
+                                                                    `loads.${index}.registration_number`
+                                                                ] && (
+                                                                    <p className="text-sm text-destructive">
+                                                                        {
+                                                                            errors[
+                                                                                `loads.${index}.registration_number`
+                                                                            ]
+                                                                        }
+                                                                    </p>
                                                                 )}
-                                                            </SelectContent>
-                                                        </Select>
+                                                            </div>
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <Input
-                                                            value={load.loaded}
-                                                            onChange={(e) =>
-                                                                updateLoad(
-                                                                    index,
-                                                                    'loaded',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Loaded"
-                                                            className="h-8 w-32"
-                                                        />
+                                                        <div>
+                                                            <Input
+                                                                value={
+                                                                    load.loaded
+                                                                }
+                                                                onKeyDown={(
+                                                                    e,
+                                                                ) => {
+                                                                    if (
+                                                                        load.loaded ===
+                                                                            '' &&
+                                                                        e.key
+                                                                            .length ===
+                                                                            1 &&
+                                                                        !e.ctrlKey &&
+                                                                        !e.metaKey &&
+                                                                        !e.altKey
+                                                                    ) {
+                                                                        e.preventDefault();
+                                                                        updateLoad(
+                                                                            index,
+                                                                            'loaded',
+                                                                            e.key.toUpperCase(),
+                                                                        );
+                                                                    }
+                                                                }}
+                                                                onChange={(
+                                                                    e,
+                                                                ) => {
+                                                                    if (
+                                                                        load.loaded !==
+                                                                        ''
+                                                                    ) {
+                                                                        updateLoad(
+                                                                            index,
+                                                                            'loaded',
+                                                                            e
+                                                                                .target
+                                                                                .value,
+                                                                        );
+                                                                    }
+                                                                }}
+                                                                placeholder="Loaded"
+                                                                className="h-8 w-32"
+                                                            />
+                                                            {errors[
+                                                                `loads.${index}.loaded`
+                                                            ] && (
+                                                                <p className="text-sm text-destructive">
+                                                                    {
+                                                                        errors[
+                                                                            `loads.${index}.loaded`
+                                                                        ]
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <Input
-                                                            value={
-                                                                load.location
-                                                            }
-                                                            onChange={(e) =>
-                                                                updateLoad(
-                                                                    index,
-                                                                    'location',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Location"
-                                                            className="h-8 w-40"
-                                                        />
+                                                        <div>
+                                                            <Input
+                                                                value={
+                                                                    load.location
+                                                                }
+                                                                onChange={(e) =>
+                                                                    updateLoad(
+                                                                        index,
+                                                                        'location',
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                placeholder="Location"
+                                                                className="h-8 w-40"
+                                                            />
+                                                            {errors[
+                                                                `loads.${index}.location`
+                                                            ] && (
+                                                                <p className="text-sm text-destructive">
+                                                                    {
+                                                                        errors[
+                                                                            `loads.${index}.location`
+                                                                        ]
+                                                                    }
+                                                                </p>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <Input
@@ -367,30 +538,6 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex items-center gap-1">
-                                                            <Tooltip>
-                                                                <TooltipTrigger
-                                                                    asChild
-                                                                >
-                                                                    <Button
-                                                                        type="button"
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        onClick={() =>
-                                                                            updateLoad(
-                                                                                index,
-                                                                                'loaded',
-                                                                                'Empty',
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <Brush className="h-4 w-4" />
-                                                                    </Button>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>
-                                                                    Mark as
-                                                                    Empty
-                                                                </TooltipContent>
-                                                            </Tooltip>
                                                             <Tooltip>
                                                                 <TooltipTrigger
                                                                     asChild

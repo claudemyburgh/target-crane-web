@@ -18,8 +18,8 @@ class TrailerLoadedReportFormRequest extends FormRequest
             'loads' => ['required', 'array', 'min:1'],
             'loads.*.fleet_number' => ['required', 'string'],
             'loads.*.registration_number' => ['required', 'string'],
-            'loads.*.loaded' => ['required', 'boolean'],
-            'loads.*.location' => ['nullable', 'string'],
+            'loads.*.loaded' => ['required', 'string'],
+            'loads.*.location' => ['required', 'string'],
             'loads.*.comment' => ['nullable', 'string'],
         ];
     }
