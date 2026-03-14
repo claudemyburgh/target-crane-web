@@ -8,6 +8,7 @@ use App\Models\Trailer;
 use App\Models\TrailerLoadedReport;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Spatie\LaravelPdf\Facades\Pdf;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -121,6 +122,145 @@ class TrailerLoadedReportController extends Controller
         return Inertia::render('admin/trailer-loaded-reports/show', [
             'report' => $trailerLoadedReport,
         ]);
+    }
+
+    public function pdfRange(Request $request)
+    {
+        $days = $request->integer('days', 7);
+
+        if (! in_array($days, [7, 14, 30])) {
+            $days = 7;
+        }
+
+        return $this->generateRangePdf($days);
+    }
+
+    public function pdf(Request $request, ?TrailerLoadedReport $trailerLoadedReport = null)
+    {
+        if ($trailerLoadedReport) {
+            return $this->generateSingleDayPdf($trailerLoadedReport);
+        }
+
+        return $this->pdfRange($request);
+    }
+
+    private function generateSingleDayPdf(TrailerLoadedReport $report)
+    {
+        $this->authorize('view', $report);
+
+        $trailers = Trailer::orderBy('fleet_number')->get();
+
+        $loadsByFleet = [];
+        foreach ($report->loads as $load) {
+            $loadsByFleet[$load['fleet_number']] = $load;
+        }
+
+        $reportData = $trailers->map(function ($trailer) use ($loadsByFleet) {
+            $load = $loadsByFleet[$trailer->fleet_number] ?? null;
+
+            return [
+                'fleet_number' => $trailer->fleet_number,
+                'registration_number' => $trailer->registration_number,
+                'loaded' => $load ? $load['loaded'] : false,
+                'location' => $load['location'] ?? '',
+                'comment' => $load['comment'] ?? '',
+            ];
+        });
+
+        $loadedCount = $reportData->filter(fn ($t) => $t['loaded'])->count();
+        $emptyCount = $reportData->filter(fn ($t) => ! $t['loaded'])->count();
+
+        return Pdf::view('pdf.trailer-loaded-report', [
+            'title' => 'Trailer Loaded Report',
+            'dateRange' => $report->date->format('d M Y'),
+            'endDate' => $report->date,
+            'startDate' => $report->date,
+            'trailers' => $reportData,
+            'loadedCount' => $loadedCount,
+            'emptyCount' => $emptyCount,
+            'showDates' => false,
+        ])
+            ->name('trailer-report-'.$report->date->format('Y-m-d').'.pdf')
+            ->download();
+    }
+
+    private function generateRangePdf(int $days)
+    {
+        $this->authorize('viewAny', TrailerLoadedReport::class);
+
+        $endDate = now()->subDay()->startOfDay();
+        $startDate = $endDate->copy()->subDays($days - 1)->startOfDay();
+
+        $reports = TrailerLoadedReport::whereBetween('date', [$startDate, $endDate])
+            ->orderBy('date')
+            ->get();
+
+        $dateRange = [];
+        $current = $startDate->copy();
+        while ($current->lte($endDate)) {
+            $dateRange[] = $current->copy();
+            $current->addDay();
+        }
+
+        $trailers = Trailer::orderBy('fleet_number')->get();
+
+        $matrix = [];
+        foreach ($trailers as $trailer) {
+            $matrix[$trailer->fleet_number] = [
+                'registration_number' => $trailer->registration_number,
+                'dates' => [],
+            ];
+        }
+
+        foreach ($reports as $report) {
+            $dateKey = $report->date->format('Y-m-d');
+            foreach ($report->loads as $load) {
+                if (isset($matrix[$load['fleet_number']])) {
+                    $matrix[$load['fleet_number']]['dates'][$dateKey] = [
+                        'loaded' => $load['loaded'],
+                        'location' => $load['location'] ?? '',
+                    ];
+                }
+            }
+        }
+
+        $dateHeaders = [];
+        foreach ($dateRange as $date) {
+            $dateHeaders[] = [
+                'date' => $date->format('Y-m-d'),
+                'day' => $date->format('D'),
+                'dayNum' => $date->format('d'),
+            ];
+        }
+
+        $summary = [];
+        foreach ($dateRange as $date) {
+            $dateKey = $date->format('Y-m-d');
+            $loaded = 0;
+            $empty = 0;
+            foreach ($matrix as $fleetNumber => $data) {
+                if (isset($data['dates'][$dateKey])) {
+                    if ($data['dates'][$dateKey]['loaded']) {
+                        $loaded++;
+                    } else {
+                        $empty++;
+                    }
+                }
+            }
+            $summary[$dateKey] = ['loaded' => $loaded, 'empty' => $empty];
+        }
+
+        return Pdf::view('pdf.trailer-loaded-report-range', [
+            'title' => 'Trailer Loaded Report - '.$days.' Days',
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'dateRange' => $startDate->format('d M Y').' - '.$endDate->format('d M Y'),
+            'dateHeaders' => $dateHeaders,
+            'trailers' => $matrix,
+            'summary' => $summary,
+        ])
+            ->name('trailer-report-'.$days.'-days-'.$endDate->format('Y-m-d').'.pdf')
+            ->download();
     }
 
     public function destroy(Request $request, TrailerLoadedReport $trailerLoadedReport)

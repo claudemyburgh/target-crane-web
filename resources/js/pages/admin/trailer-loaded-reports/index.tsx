@@ -5,6 +5,7 @@ import {
     Check,
     ChevronsLeft,
     ChevronsRight,
+    Download,
     Eye,
     Loader2,
     Pencil,
@@ -35,6 +36,12 @@ import {
     PaginationPrevious,
 } from '@/components/ui/pagination';
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
@@ -48,7 +55,9 @@ import {
     destroy,
     edit,
     index,
+    pdf,
     show,
+    singlePdf,
 } from '@/routes/admin/trailer-loaded-reports';
 import type { BreadcrumbItem } from '@/types';
 
@@ -177,6 +186,37 @@ export default function TrailerLoadedReportsIndex({
                                 Back
                             </Button>
                         </Link>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="secondary" size="sm">
+                                    <Download className="mr-2 h-4 w-4" />
+                                    PDF
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={pdf({ mergeQuery: { days: 7 } })}
+                                    >
+                                        Last 7 Days
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={pdf({ mergeQuery: { days: 14 } })}
+                                    >
+                                        Last 14 Days
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link
+                                        href={pdf({ mergeQuery: { days: 30 } })}
+                                    >
+                                        Last 30 Days
+                                    </Link>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         {can.create && (
                             <Link href={create()}>
                                 <Button size="sm">

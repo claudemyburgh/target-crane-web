@@ -38,7 +38,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admi
 
     // Trailer Loaded Reports - all authenticated users can view (in admin group but without extra middleware)
     Route::get('trailer-loaded-reports', [TrailerLoadedReportController::class, 'index'])->name('trailer-loaded-reports.index');
+    Route::get('trailer-loaded-reports/pdf/{trailerLoadedReport?}', [TrailerLoadedReportController::class, 'pdf'])->name('trailer-loaded-reports.single-pdf');
+    Route::get('trailer-loaded-reports/pdf', [TrailerLoadedReportController::class, 'pdfRange'])->name('trailer-loaded-reports.pdf');
     Route::get('trailer-loaded-reports/{trailerLoadedReport}', [TrailerLoadedReportController::class, 'show'])->name('trailer-loaded-reports.show');
+    Route::get('trailer-loaded-reports/{trailerLoadedReport}/pdf', [TrailerLoadedReportController::class, 'pdf'])->name('trailer-loaded-reports.single-pdf-legacy');
 
     Route::resource('users', UserAdminController::class);
     Route::post('users/{user}/restore', [UserAdminController::class, 'restore'])->name('users.restore');

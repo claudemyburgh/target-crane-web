@@ -1,12 +1,20 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Check, MapPin, Pencil, Truck, X } from 'lucide-react';
+import {
+    ArrowLeft,
+    Check,
+    Download,
+    MapPin,
+    Pencil,
+    Truck,
+    X,
+} from 'lucide-react';
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
-import { edit, index } from '@/routes/admin/trailer-loaded-reports';
+import { edit, index, singlePdf } from '@/routes/admin/trailer-loaded-reports';
 import type { BreadcrumbItem } from '@/types';
 
 type LoadItem = {
@@ -65,6 +73,16 @@ export default function ShowTrailerLoadedReport({ report }: Props) {
                         </p>
                     </div>
                     <div className="flex gap-2">
+                        <Link
+                            href={singlePdf({
+                                trailerLoadedReport: report.date,
+                            })}
+                        >
+                            <Button variant="secondary" size="sm">
+                                <Download className="mr-2 h-4 w-4" />
+                                PDF
+                            </Button>
+                        </Link>
                         <Link href={edit({ trailerLoadedReport: report.date })}>
                             <Button variant="secondary" size="sm">
                                 <Pencil className="mr-2 h-4 w-4" />
