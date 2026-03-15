@@ -1,7 +1,11 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface StatSimpleProps {
@@ -29,6 +33,7 @@ export default function StatSimple({
             )}
         >
             <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="absolute right-0 bottom-0 left-0 h-1/3 bg-gradient-to-t from-target/20 to-transparent" />
             <div className="relative flex items-start justify-between">
                 <div className="flex flex-col gap-1">
                     <span className="text-sm font-medium text-muted-foreground">

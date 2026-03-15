@@ -325,7 +325,7 @@ const CalendarWeekView = () => {
 };
 
 const CalendarMonthView = () => {
-    const { date, view, events, locale } = useCalendar();
+    const { date, view, events, locale, onEventClick } = useCalendar();
 
     const monthDates = useMemo(() => getDaysInMonth(date), [date]);
     const weekDays = useMemo(() => generateWeekdays(locale), [locale]);
@@ -333,7 +333,7 @@ const CalendarMonthView = () => {
     if (view !== 'month') return null;
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex flex-col">
             <div className="grid grid-cols-7 gap-px sticky top-0 bg-background border-b">
                 {weekDays.map((day, i) => (
                     <div
@@ -347,7 +347,7 @@ const CalendarMonthView = () => {
                     </div>
                 ))}
             </div>
-            <div className="grid overflow-hidden -mt-px flex-1 auto-rows-fr p-px grid-cols-7 gap-px">
+            <div className="grid mt-px grid-cols-7 gap-px">
                 {monthDates.map((_date) => {
                     const currentEvents = events.filter((event) =>
                         isSameDay(event.start, _date)
@@ -356,7 +356,7 @@ const CalendarMonthView = () => {
                     return (
                         <div
                             className={cn(
-                                'ring-1 p-2 text-sm text-muted-foreground ring-border overflow-auto',
+                                'ring-1 p-2 text-sm text-muted-foreground ring-border',
                                 !isSameMonth(date, _date) && 'text-muted-foreground/50'
                             )}
                             key={_date.toString()}
@@ -374,7 +374,8 @@ const CalendarMonthView = () => {
                                 return (
                                     <div
                                         key={event.id}
-                                        className="px-1 rounded text-sm flex items-center gap-1"
+                                        className="px-1 rounded text-sm flex items-center gap-1 cursor-pointer hover:bg-muted/50"
+                                        onClick={() => onEventClick?.(event)}
                                     >
                                         <div
                                             className={cn(
@@ -431,7 +432,7 @@ const CalendarYearView = () => {
                         ))}
                     </div>
 
-                    <div className="grid gap-x-2 text-center grid-cols-7 text-xs tabular-nums">
+                    <div className="grid gap-x-2 text-center grid-cols-7 text-2xl tabular-nums">
                         {days.map((_date) => {
                             return (
                                 <div
@@ -591,7 +592,7 @@ const TimeTable = () => {
                     >
                         {now.getHours() === hour && (
                             <div
-                                className="absolute z- left-full translate-x-2 w-dvw h-[2px] bg-red-500"
+                                className="absolute z- left-full translate-x-2 w-dvw h-2 bg-red-500"
                                 style={{
                                     top: `${(now.getMinutes() / 60) * 100}%`,
                                 }}

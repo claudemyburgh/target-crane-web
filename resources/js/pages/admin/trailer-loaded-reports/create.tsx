@@ -1,4 +1,4 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     Calendar as CalendarIcon,
@@ -56,7 +56,20 @@ interface Props {
 
 export default function CreateTrailerLoadedReport({ trailers }: Props) {
     const [isSubmitting, setIsSubmitting] = React.useState(false);
-    const [date, setDate] = React.useState<Date>(new Date());
+
+    const getInitialDate = (): Date => {
+        const params = new URLSearchParams(window.location.search);
+        const dateStr = params.get('date');
+        if (dateStr) {
+            const parsed = new Date(dateStr);
+            if (!isNaN(parsed.getTime())) {
+                return parsed;
+            }
+        }
+        return new Date();
+    };
+
+    const [date, setDate] = React.useState<Date>(getInitialDate());
 
     const initialLoads: LoadItem[] = trailers.map((trailer) => ({
         trailer_id: trailer.id.toString(),
