@@ -194,26 +194,32 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild>
-                                    <Link
-                                        href={pdf({ mergeQuery: { days: 7 } })}
-                                    >
-                                        Last 7 Days
-                                    </Link>
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        window.location.href = pdf({
+                                            mergeQuery: { days: 7 },
+                                        }).url;
+                                    }}
+                                >
+                                    Last 7 Days
                                 </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link
-                                        href={pdf({ mergeQuery: { days: 14 } })}
-                                    >
-                                        Last 14 Days
-                                    </Link>
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        window.location.href = pdf({
+                                            mergeQuery: { days: 14 },
+                                        }).url;
+                                    }}
+                                >
+                                    Last 14 Days
                                 </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link
-                                        href={pdf({ mergeQuery: { days: 30 } })}
-                                    >
-                                        Last 30 Days
-                                    </Link>
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        window.location.href = pdf({
+                                            mergeQuery: { days: 30 },
+                                        }).url;
+                                    }}
+                                >
+                                    Last 30 Days
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,161 +11,296 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            font-size: 10px;
-            line-height: 1.3;
+            font-size: 12px;
+            line-height: 1.4;
             color: #1a1a1a;
+            padding: 20px 40px;
         }
+
         .header {
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
             border-bottom: 2px solid #e5e5e5;
         }
-        .header h1 {
+
+        .header-right {
+            text-align: right;
+        }
+
+        .header-right h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #1a1a1a;
+        }
+
+        .header-right .date-range {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .day-section {
+            margin-bottom: 50px;
+            page-break-inside: avoid;
+        }
+
+        .day-header {
             font-size: 18px;
             font-weight: 700;
-            margin-bottom: 3px;
+            margin-bottom: 15px;
+            color: #1a1a1a;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e5e5e5;
         }
-        .header .date-range {
-            font-size: 12px;
-            color: #666;
-        }
-        table {
+
+        .summary-table {
             width: 100%;
+            margin-bottom: 20px;
             border-collapse: collapse;
         }
-        th {
+
+        .summary-card {
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid transparent;
+        }
+
+        .summary-card.total {
+            background-color: #f8fafc;
+            border-color: #e2e8f0;
+        }
+
+        .summary-card.loaded {
+            background-color: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .summary-card.empty {
+            background-color: #fff7ed;
+            border-color: #fed7aa;
+        }
+
+        .summary-card .label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .summary-card .count {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .summary-card.total .count {
+            color: #334155;
+        }
+
+        .summary-card.loaded .count {
+            color: #16a34a;
+        }
+
+        .summary-card.empty .count {
+            color: #ea580c;
+        }
+
+        .summary-card .percentage {
+            font-size: 13px;
+            font-weight: 600;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+
+        .summary-card.loaded .percentage {
+            color: #16a34a;
+        }
+
+        .summary-card.empty .percentage {
+            color: #ea580c;
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table.data-table th {
             background-color: #f5f5f5;
-            padding: 6px 4px;
-            text-align: center;
-            font-weight: 600;
-            border: 1px solid #e5e5e5;
-            font-size: 9px;
-        }
-        th:first-child {
-            text-align: left;
-            background-color: #e5e5e5;
-        }
-        td {
-            padding: 4px;
-            border: 1px solid #e5e5e5;
-            text-align: center;
-        }
-        td:first-child {
+            padding: 10px 8px;
             text-align: left;
             font-weight: 600;
-            background-color: #fafafa;
+            border-bottom: 2px solid #e5e5e5;
         }
+
+        table.data-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        table.data-table tr:last-child td {
+            border-bottom: none;
+        }
+
         .status {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
         }
+
         .status.loaded {
             background-color: #dcfce7;
             color: #16a34a;
         }
+
         .status.empty {
             background-color: #ffedd5;
             color: #ea580c;
         }
-        .status.no-data {
-            background-color: #f5f5f5;
-            color: #ccc;
-        }
+
         .status-icon {
-            width: 12px;
-            height: 12px;
+            width: 14px;
+            height: 14px;
         }
-        .summary-row td {
-            background-color: #f0f9ff;
-            font-weight: 600;
+
+        .location {
+            font-size: 10px;
+            color: #999;
         }
-        .summary-row td:first-child {
-            background-color: #e0f2fe;
-        }
-        .loaded-count {
-            color: #16a34a;
-        }
-        .empty-count {
-            color: #ea580c;
-        }
+
         .footer {
-            margin-top: 15px;
-            padding-top: 10px;
+            margin-top: 30px;
+            padding-top: 15px;
             border-top: 1px solid #e5e5e5;
             text-align: center;
-            font-size: 9px;
+            font-size: 10px;
             color: #999;
         }
     </style>
 </head>
+
 <body>
     <div class="header">
-        <h1>{{ $title }}</h1>
-        <div class="date-range">{{ $dateRange }}</div>
+        <table style="width: 100%; border: none; margin: 0; padding: 0;">
+            <tr>
+                <td style="border: none; padding: 0; text-align: left; vertical-align: middle;">
+                    <div class="header-left">
+                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('images/file-logo.png'))) }}"
+                            alt="Target Cranes Logo" style="max-height: 100px; width: auto;" />
+                    </div>
+                </td>
+                <td style="border: none; padding: 0; text-align: right; vertical-align: middle;">
+                    <div class="header-right">
+                        <h1>{{ $title }}</h1>
+                        <div class="date-range">{{ $dateRange }}</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Fleet #</th>
-                <th>Reg</th>
-                @foreach($dateHeaders as $header)
-                <th>
-                    <div>{{ $header['day'] }}</div>
-                    <div>{{ $header['dayNum'] }}</div>
-                </th>
-                @endforeach
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($trailers as $fleetNumber => $trailer)
-            <tr>
-                <td>{{ $fleetNumber }}</td>
-                <td>{{ $trailer['registration_number'] }}</td>
-                @foreach($dateHeaders as $header)
-                @php
-                $dateKey = $header['date'];
-                $data = $trailer['dates'][$dateKey] ?? null;
-                @endphp
-                <td>
-                    @if($data && $data['loaded'] && $data['loaded'] !== 'Empty')
-                    <span class="status loaded">
-                        <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </span>
-                    @else
-                    <span class="status no-data">-</span>
-                    @endif
-                </td>
-                @endforeach
-            </tr>
-            @endforeach
-            <tr class="summary-row">
-                <td colspan="2"><strong>Total Loaded / Empty</strong></td>
-                @foreach($dateHeaders as $header)
-                @php
-                $dateKey = $header['date'];
-                $s = $summary[$dateKey] ?? ['loaded' => 0, 'empty' => 0];
-                @endphp
-                <td>
-                    <span class="loaded-count">{{ $s['loaded'] }}</span>
-                    /
-                    <span class="empty-count">{{ $s['empty'] }}</span>
-                </td>
-                @endforeach
-            </tr>
-        </tbody>
-    </table>
+    @foreach($daysData as $day)
+        <div class="day-section">
+            <h2 class="day-header">{{ $day['dateString'] }}</h2>
+
+            @php
+                $totalCount = $day['loadedCount'] + $day['emptyCount'];
+                $loadedPercent = $totalCount > 0 ? round(($day['loadedCount'] / $totalCount) * 100) : 0;
+                $emptyPercent = $totalCount > 0 ? round(($day['emptyCount'] / $totalCount) * 100) : 0;
+            @endphp
+
+            <table class="summary-table">
+                <tr>
+                    <td style="width: 33.33%; padding-right: 15px;">
+                        <div class="summary-card total">
+                            <div class="label">Total Trailers</div>
+                            <div class="count">{{ $totalCount }}</div>
+                            <div class="percentage">100%</div>
+                        </div>
+                    </td>
+                    <td style="width: 33.33%; padding: 0 7.5px;">
+                        <div class="summary-card loaded">
+                            <div class="label">Loaded</div>
+                            <div class="count">{{ $day['loadedCount'] }}</div>
+                            <div class="percentage">{{ $loadedPercent }}%</div>
+                        </div>
+                    </td>
+                    <td style="width: 33.33%; padding-left: 15px;">
+                        <div class="summary-card empty">
+                            <div class="label">Empty</div>
+                            <div class="count">{{ $day['emptyCount'] }}</div>
+                            <div class="percentage">{{ $emptyPercent }}%</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Fleet #</th>
+                        <th>Registration</th>
+                        <th>Status</th>
+                        <th>Location</th>
+                        <th>Comment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($day['trailers'] as $trailer)
+                        <tr>
+                            <td><strong>{{ $trailer['fleet_number'] }}</strong></td>
+                            <td>{{ $trailer['registration_number'] }}</td>
+                            <td>
+                                @if($trailer['loaded'] && $trailer['loaded'] !== 'Empty')
+                                    <span class="status loaded">
+                                        <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                        {{ $trailer['loaded'] }}
+                                    </span>
+                                @else
+                                    <span class="status empty">Empty</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($trailer['location'])
+                                    <span class="location">{{ $trailer['location'] }}</span>
+                                @else
+                                    <span class="location">-</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($trailer['comment'])
+                                    <span class="location">{{ $trailer['comment'] }}</span>
+                                @else
+                                    <span class="location">-</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endforeach
 
     <div class="footer">
-        <div>Generated on {{ now()->format('d M Y \a\t H:i') }}</div>
+        Generated on {{ now()->format('d M Y \a\t H:i') }}
     </div>
 </body>
+
 </html>

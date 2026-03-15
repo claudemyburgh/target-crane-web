@@ -48,7 +48,7 @@ class TrailerLoadedReportMail extends Mailable
         });
 
         return new Content(
-            view: 'mail.trailer-loaded-report',
+            markdown: 'mail.trailer-loaded-report',
             with: [
                 'trailers' => $reportData,
             ],
@@ -58,7 +58,7 @@ class TrailerLoadedReportMail extends Mailable
     public function attachments(): array
     {
         return [
-            Attachment::fromData(fn () => $this->pdfContent, 'trailer-report-'.$this->report->date->format('Y-m-d').'.pdf')
+            Attachment::fromData(fn () => base64_decode($this->pdfContent), 'trailer-report-'.$this->report->date->format('Y-m-d').'.pdf')
                 ->withMime('application/pdf'),
         ];
     }

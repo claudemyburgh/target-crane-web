@@ -177,7 +177,7 @@ class TrailerLoadedReportController extends Controller
             return [
                 'fleet_number' => $trailer->fleet_number,
                 'registration_number' => $trailer->registration_number,
-                'status' => $load && $load['loaded'] ? $load['loaded'] : 'Empty',
+                'status' => ($load && $load['loaded'] && $load['loaded'] !== 'Empty') ? $load['loaded'] : '',
                 'location' => $load['location'] ?? '',
                 'comment' => $load['comment'] ?? '',
             ];
@@ -201,7 +201,7 @@ class TrailerLoadedReportController extends Controller
 
         $users = User::whereIn('id', $request->user_ids)->get();
 
-        $pdfContent = $this->generateSingleDayPdfContent($trailerLoadedReport);
+        $pdfContent = base64_encode($this->generateSingleDayPdfContent($trailerLoadedReport));
 
         foreach ($users as $user) {
             Mail::to($user->email)->queue(new TrailerLoadedReportMail($trailerLoadedReport, $pdfContent));
@@ -225,7 +225,7 @@ class TrailerLoadedReportController extends Controller
             return [
                 'fleet_number' => $trailer->fleet_number,
                 'registration_number' => $trailer->registration_number,
-                'loaded' => $load && $load['loaded'] ? $load['loaded'] : 'Empty',
+                'loaded' => ($load && $load['loaded'] && $load['loaded'] !== 'Empty') ? $load['loaded'] : '',
                 'location' => $load['location'] ?? '',
                 'comment' => $load['comment'] ?? '',
             ];
@@ -250,7 +250,7 @@ class TrailerLoadedReportController extends Controller
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
 
         return $dompdf->output();
@@ -273,7 +273,7 @@ class TrailerLoadedReportController extends Controller
             return [
                 'fleet_number' => $trailer->fleet_number,
                 'registration_number' => $trailer->registration_number,
-                'loaded' => $load && $load['loaded'] ? $load['loaded'] : 'Empty',
+                'loaded' => ($load && $load['loaded'] && $load['loaded'] !== 'Empty') ? $load['loaded'] : '',
                 'location' => $load['location'] ?? '',
                 'comment' => $load['comment'] ?? '',
             ];
@@ -292,6 +292,7 @@ class TrailerLoadedReportController extends Controller
             'emptyCount' => $emptyCount,
             'showDates' => false,
         ])
+            ->landscape()
             ->name('trailer-report-'.$report->date->format('Y-m-d').'.pdf')
             ->download();
     }
@@ -307,59 +308,49 @@ class TrailerLoadedReportController extends Controller
             ->orderBy('date')
             ->get();
 
-        $dateRange = [];
-        $current = $startDate->copy();
-        while ($current->lte($endDate)) {
-            $dateRange[] = $current->copy();
-            $current->addDay();
-        }
-
         $trailers = $this->getCachedTrailersFull();
 
-        $matrix = [];
-        foreach ($trailers as $trailer) {
-            $matrix[$trailer->fleet_number] = [
-                'registration_number' => $trailer->registration_number,
-                'dates' => [],
-            ];
-        }
+        $daysData = [];
+        $current = $startDate->copy();
 
-        foreach ($reports as $report) {
-            $dateKey = $report->date->format('Y-m-d');
-            foreach ($report->loads as $load) {
-                if (isset($matrix[$load['fleet_number']])) {
-                    $matrix[$load['fleet_number']]['dates'][$dateKey] = [
-                        'loaded' => $load['loaded'],
-                        'location' => $load['location'] ?? '',
-                    ];
+        while ($current->lte($endDate)) {
+            $dateKey = $current->format('Y-m-d');
+
+            $report = $reports->first(function ($r) use ($dateKey) {
+                return $r->date->format('Y-m-d') === $dateKey;
+            });
+
+            $loadsByFleet = [];
+            if ($report) {
+                foreach ($report->loads as $load) {
+                    $loadsByFleet[$load['fleet_number']] = $load;
                 }
             }
-        }
 
-        $dateHeaders = [];
-        foreach ($dateRange as $date) {
-            $dateHeaders[] = [
-                'date' => $date->format('Y-m-d'),
-                'day' => $date->format('D'),
-                'dayNum' => $date->format('d'),
+            $reportData = $trailers->map(function ($trailer) use ($loadsByFleet) {
+                $load = $loadsByFleet[$trailer->fleet_number] ?? null;
+
+                return [
+                    'fleet_number' => $trailer->fleet_number,
+                    'registration_number' => $trailer->registration_number,
+                    'loaded' => ($load && isset($load['loaded']) && $load['loaded'] !== 'Empty') ? $load['loaded'] : '',
+                    'location' => $load['location'] ?? '',
+                    'comment' => $load['comment'] ?? '',
+                ];
+            });
+
+            $loadedCount = $reportData->filter(fn ($t) => $t['loaded'] && $t['loaded'] !== 'Empty')->count();
+            $emptyCount = $reportData->filter(fn ($t) => ! $t['loaded'] || $t['loaded'] === 'Empty')->count();
+
+            $daysData[] = [
+                'date' => $current->copy(),
+                'dateString' => $current->format('d M Y'),
+                'trailers' => $reportData,
+                'loadedCount' => $loadedCount,
+                'emptyCount' => $emptyCount,
             ];
-        }
 
-        $summary = [];
-        foreach ($dateRange as $date) {
-            $dateKey = $date->format('Y-m-d');
-            $loaded = 0;
-            $empty = 0;
-            foreach ($matrix as $fleetNumber => $data) {
-                if (isset($data['dates'][$dateKey])) {
-                    if ($data['dates'][$dateKey]['loaded'] && $data['dates'][$dateKey]['loaded'] !== 'Empty') {
-                        $loaded++;
-                    } else {
-                        $empty++;
-                    }
-                }
-            }
-            $summary[$dateKey] = ['loaded' => $loaded, 'empty' => $empty];
+            $current = $current->addDay();
         }
 
         return Pdf::view('pdf.trailer-loaded-report-range', [
@@ -367,10 +358,9 @@ class TrailerLoadedReportController extends Controller
             'startDate' => $startDate,
             'endDate' => $endDate,
             'dateRange' => $startDate->format('d M Y').' - '.$endDate->format('d M Y'),
-            'dateHeaders' => $dateHeaders,
-            'trailers' => $matrix,
-            'summary' => $summary,
+            'daysData' => $daysData,
         ])
+            ->landscape()
             ->name('trailer-report-'.$days.'-days-'.$endDate->format('Y-m-d').'.pdf')
             ->download();
     }
