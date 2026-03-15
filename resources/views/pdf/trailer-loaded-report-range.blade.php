@@ -133,18 +133,11 @@
                 $data = $trailer['dates'][$dateKey] ?? null;
                 @endphp
                 <td>
-                    @if($data)
-                    <span class="status {{ $data['loaded'] ? 'loaded' : 'empty' }}">
-                        @if($data['loaded'])
+                    @if($data && $data['loaded'] && $data['loaded'] !== 'Empty')
+                    <span class="status loaded">
                         <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                        @else
-                        <svg class="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                        @endif
                     </span>
                     @else
                     <span class="status no-data">-</span>

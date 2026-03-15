@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Calendar, Hash, Pencil, Trash2, Truck } from 'lucide-react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,7 +34,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 export default function Show({ trailer, can }: Props) {
     const handleDelete = () => {
         if (confirm('Are you sure you want to delete this trailer?')) {
-            router.delete(destroy({ trailer: trailer.id }));
+            router.delete(destroy({ trailer: trailer.id }), {
+                onSuccess: () => toast.success('Trailer deleted successfully'),
+            });
         }
     };
 

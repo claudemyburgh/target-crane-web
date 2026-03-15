@@ -6,6 +6,7 @@ import {
     Plus,
     Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import * as React from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,7 @@ import {
 } from '@/components/ui/tooltip';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
-import { index, update } from '@/routes/admin/trailer-loaded-reports';
+import { index, show, update } from '@/routes/admin/trailer-loaded-reports';
 import type { BreadcrumbItem } from '@/types';
 
 type LoadItem = {
@@ -75,8 +76,8 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
             trailer_id: matchingTrailer ? matchingTrailer.id.toString() : '',
             fleet_number: load.fleet_number,
             registration_number: load.registration_number,
-            loaded: load.loaded,
-            location: load.location,
+            loaded: String(load.loaded || ''),
+            location: load.location || '',
             comment: load.comment || '',
         };
     });
@@ -156,14 +157,6 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
                     'Registration number is required';
                 hasErrors = true;
             }
-            if (!loads[i].loaded.trim()) {
-                newErrors[`loads.${i}.loaded`] = 'Loaded status is required';
-                hasErrors = true;
-            }
-            if (!loads[i].location.trim()) {
-                newErrors[`loads.${i}.location`] = 'Location is required';
-                hasErrors = true;
-            }
         }
 
         const seen = new Set<string>();
@@ -199,6 +192,10 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
                 loads: formattedLoads,
             },
             {
+                onSuccess: () => {
+                    setIsSubmitting(false);
+                    toast.success('Report updated successfully');
+                },
                 onFinish: () => setIsSubmitting(false),
                 onError: (err) => setErrors(err),
             },
@@ -207,7 +204,10 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
 
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Admin', href: '/' },
-        { title: 'Trailer Loaded Reports', href: index().url },
+        {
+            title: 'Trailer Loaded Reports',
+            href: show({ trailerLoadedReport: report.date }),
+        },
         { title: 'Edit Report', href: '#' },
     ];
 
@@ -220,10 +220,10 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
                         title="Edit Trailer Loaded Report"
                         description="Edit an existing trailer loaded report"
                     />
-                    <Link href={index()}>
+                    <Link href={show({ trailerLoadedReport: report.date })}>
                         <Button variant="secondary" size="sm">
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Reports
+                            Back to Report
                         </Button>
                     </Link>
                 </div>
@@ -312,16 +312,10 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
                                                 </span>
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Loaded{' '}
-                                                <span className="text-destructive">
-                                                    *
-                                                </span>
+                                                Loaded
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Location{' '}
-                                                <span className="text-destructive">
-                                                    *
-                                                </span>
+                                                Location
                                             </th>
                                             <th className="min-w-[300px] px-4 py-3 text-left font-medium">
                                                 Comment
@@ -359,7 +353,12 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
                                                                 <SelectTrigger className="h-8 w-40">
                                                                     <SelectValue placeholder="Select fleet #" />
                                                                 </SelectTrigger>
-                                                                <SelectContent>
+                                                                <SelectContent
+                                                                    position="popper"
+                                                                    sideOffset={
+                                                                        4
+                                                                    }
+                                                                >
                                                                     {availableTrailers.map(
                                                                         (
                                                                             trailer,
@@ -431,7 +430,12 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
                                                                 <SelectTrigger className="h-8 w-40">
                                                                     <SelectValue placeholder="Select reg #" />
                                                                 </SelectTrigger>
-                                                                <SelectContent>
+                                                                <SelectContent
+                                                                    position="popper"
+                                                                    sideOffset={
+                                                                        4
+                                                                    }
+                                                                >
                                                                     {availableTrailers.map(
                                                                         (
                                                                             trailer,
@@ -487,9 +491,9 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
                                                     <td className="px-4 py-3">
                                                         <div>
                                                             <Input
-                                                                value={
-                                                                    load.loaded
-                                                                }
+                                                                value={String(
+                                                                    load.loaded,
+                                                                )}
                                                                 onKeyDown={(
                                                                     e,
                                                                 ) => {
@@ -544,34 +548,68 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <div>
-                                                            <Input
-                                                                value={
-                                                                    load.location
+                                                        <Select
+                                                            value={
+                                                                load.location
+                                                            }
+                                                            onValueChange={(
+                                                                value,
+                                                            ) =>
+                                                                updateLoad(
+                                                                    index,
+                                                                    'location',
+                                                                    value,
+                                                                )
+                                                            }
+                                                        >
+                                                            <SelectTrigger className="h-8 w-40">
+                                                                <SelectValue placeholder="Select location" />
+                                                            </SelectTrigger>
+                                                            <SelectContent
+                                                                position="popper"
+                                                                sideOffset={4}
+                                                            >
+                                                                {[
+                                                                    'Bolt',
+                                                                    'Freedom Way',
+                                                                    'Graph',
+                                                                    'Maintenance',
+                                                                    'MPT',
+                                                                    'Neptune',
+                                                                    'Service',
+                                                                    'Woodstock',
+                                                                    'Yacht Club',
+                                                                ].map(
+                                                                    (
+                                                                        location,
+                                                                    ) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                location
+                                                                            }
+                                                                            value={
+                                                                                location
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                location
+                                                                            }
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {errors[
+                                                            `loads.${index}.location`
+                                                        ] && (
+                                                            <p className="text-sm text-destructive">
+                                                                {
+                                                                    errors[
+                                                                        `loads.${index}.location`
+                                                                    ]
                                                                 }
-                                                                onChange={(e) =>
-                                                                    updateLoad(
-                                                                        index,
-                                                                        'location',
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                placeholder="Location"
-                                                                className="h-8 w-40"
-                                                            />
-                                                            {errors[
-                                                                `loads.${index}.location`
-                                                            ] && (
-                                                                <p className="text-sm text-destructive">
-                                                                    {
-                                                                        errors[
-                                                                            `loads.${index}.location`
-                                                                        ]
-                                                                    }
-                                                                </p>
-                                                            )}
-                                                        </div>
+                                                            </p>
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <Input
@@ -627,7 +665,7 @@ export default function EditTrailerLoadedReport({ report, trailers }: Props) {
                     </Card>
 
                     <div className="flex justify-end gap-4">
-                        <Link href={index()}>
+                        <Link href={show({ trailerLoadedReport: report.date })}>
                             <Button type="button" variant="outline">
                                 Cancel
                             </Button>

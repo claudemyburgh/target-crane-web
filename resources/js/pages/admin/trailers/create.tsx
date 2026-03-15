@@ -3,6 +3,7 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 import { index as trailersIndex, store } from '@/routes/admin/trailers';
@@ -24,7 +25,10 @@ export default function Create() {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        form.submit(store(), { preserveScroll: true });
+        form.submit(store(), {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Trailer created successfully'),
+        });
     };
 
     return (

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Location;
 use App\Models\Trailer;
 use App\Models\TrailerLoadedReport;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -32,15 +33,16 @@ class TrailerLoadedReportFactory extends Factory
             ];
         }
 
-        $locations = ['Depot A', 'Depot B', 'Warehouse 1', 'Warehouse 2', 'Loading Bay'];
+        $locations = Location::values();
 
         $loads = [];
 
         foreach (self::$trailers as $trailer) {
+            $isLoaded = (bool) rand(0, 1);
             $loads[] = [
                 'fleet_number' => $trailer->fleet_number,
                 'registration_number' => $trailer->registration_number,
-                'loaded' => (bool) rand(0, 1),
+                'loaded' => $isLoaded ? fake()->randomElement(['Boat '.fake()->unique()->numerify('C####'), fake()->randomElement(['C1 desk lid mould', 'C2 desk lid mould', 'C3 desk lid mould'])]) : '',
                 'location' => $locations[array_rand($locations)],
                 'comment' => '',
             ];

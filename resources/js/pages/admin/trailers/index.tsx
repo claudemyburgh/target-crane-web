@@ -14,6 +14,7 @@ import {
     Truck,
     X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import * as React from 'react';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
@@ -429,6 +430,10 @@ export default function AdminTrailersIndex({
                                                         restore(t.id),
                                                         {},
                                                         {
+                                                            onSuccess: () =>
+                                                                toast.success(
+                                                                    'Trailer restored successfully',
+                                                                ),
                                                             preserveScroll: true,
                                                         },
                                                     )
@@ -442,6 +447,10 @@ export default function AdminTrailersIndex({
                                                     router.delete(
                                                         forceDelete(t.id),
                                                         {
+                                                            onSuccess: () =>
+                                                                toast.success(
+                                                                    'Trailer permanently deleted',
+                                                                ),
                                                             preserveScroll: true,
                                                         },
                                                     )
@@ -507,6 +516,17 @@ export default function AdminTrailersIndex({
             { action, ids: selectedIds },
             {
                 preserveScroll: true,
+                onSuccess: () => {
+                    if (action === 'delete') {
+                        toast.success(
+                            `${selectedIds.length} trailer(s) deleted successfully`,
+                        );
+                    } else if (action === 'restore') {
+                        toast.success(
+                            `${selectedIds.length} trailer(s) restored successfully`,
+                        );
+                    }
+                },
                 onFinish: () => {
                     if (action === 'delete') {
                         setIsBulkDeleting(false);
@@ -524,7 +544,10 @@ export default function AdminTrailersIndex({
         if (!confirmDeleteTrailer) return;
         setIsDeleting(true);
         router.delete(destroy(confirmDeleteTrailer.id), {
-            onSuccess: () => setConfirmDeleteTrailer(null),
+            onSuccess: () => {
+                setConfirmDeleteTrailer(null);
+                toast.success('Trailer deleted successfully');
+            },
             onFinish: () => setIsDeleting(false),
             preserveScroll: true,
         });

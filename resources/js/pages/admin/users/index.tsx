@@ -17,6 +17,7 @@ import {
     UserPlus,
     X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import * as React from 'react';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -384,7 +385,13 @@ export default function AdminUsersIndex({
                                                 router.post(
                                                     restore(u.uuid),
                                                     {},
-                                                    { preserveScroll: true },
+                                                    {
+                                                        onSuccess: () =>
+                                                            toast.success(
+                                                                'User restored successfully',
+                                                            ),
+                                                        preserveScroll: true,
+                                                    },
                                                 )
                                             }
                                         >
@@ -560,6 +567,17 @@ export default function AdminUsersIndex({
             { action, ids: selectedIds, role },
             {
                 preserveScroll: true,
+                onSuccess: () => {
+                    if (action === 'delete') {
+                        toast.success(
+                            `${selectedIds.length} user(s) deleted successfully`,
+                        );
+                    } else if (action === 'restore') {
+                        toast.success(
+                            `${selectedIds.length} user(s) restored successfully`,
+                        );
+                    }
+                },
                 onFinish: () => {
                     if (action === 'delete') {
                         setIsBulkDeleting(false);
@@ -580,7 +598,10 @@ export default function AdminUsersIndex({
             banRoute(banUser!.uuid),
             { reason: banReason, until: banUntil || null },
             {
-                onSuccess: () => setBanUser(null),
+                onSuccess: () => {
+                    setBanUser(null);
+                    toast.success('User banned successfully');
+                },
                 onFinish: () => setIsBanning(false),
                 preserveScroll: true,
             },
@@ -594,7 +615,10 @@ export default function AdminUsersIndex({
             assignRole(roleUser!.uuid),
             { role: roleValue },
             {
-                onSuccess: () => setRoleUser(null),
+                onSuccess: () => {
+                    setRoleUser(null);
+                    toast.success('Role assigned successfully');
+                },
                 onFinish: () => setIsAssigningRole(false),
                 preserveScroll: true,
             },
@@ -1215,8 +1239,12 @@ export default function AdminUsersIndex({
                                         router.delete(
                                             destroy(confirmDeleteUser.uuid),
                                             {
-                                                onSuccess: () =>
-                                                    setConfirmDeleteUser(null),
+                                                onSuccess: () => {
+                                                    setConfirmDeleteUser(null);
+                                                    toast.success(
+                                                        'User deleted successfully',
+                                                    );
+                                                },
                                                 onFinish: () =>
                                                     setIsDeleting(false),
                                                 preserveScroll: true,

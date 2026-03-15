@@ -18,8 +18,8 @@ class TrailerLoadedReportFormRequest extends FormRequest
             'loads' => ['required', 'array', 'min:1'],
             'loads.*.fleet_number' => ['required', 'string'],
             'loads.*.registration_number' => ['required', 'string'],
-            'loads.*.loaded' => ['required', 'string'],
-            'loads.*.location' => ['required', 'string'],
+            'loads.*.loaded' => ['nullable', 'string'],
+            'loads.*.location' => ['nullable', 'string'],
             'loads.*.comment' => ['nullable', 'string'],
         ];
     }
@@ -29,7 +29,6 @@ class TrailerLoadedReportFormRequest extends FormRequest
         return [
             'loads.*.fleet_number.required' => 'The fleet number is required for each load.',
             'loads.*.registration_number.required' => 'The registration number is required for each load.',
-            'loads.*.loaded.required' => 'The loaded status is required for each load.',
         ];
     }
 }

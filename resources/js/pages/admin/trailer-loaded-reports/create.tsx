@@ -6,6 +6,7 @@ import {
     Plus,
     Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import * as React from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -75,7 +76,7 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
         trailer_id: trailer.id.toString(),
         fleet_number: trailer.fleet_number,
         registration_number: trailer.registration_number,
-        loaded: 'Empty',
+        loaded: '',
         location: '',
         comment: '',
     }));
@@ -101,7 +102,7 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                 trailer_id: '',
                 fleet_number: '',
                 registration_number: '',
-                loaded: 'Empty',
+                loaded: '',
                 location: '',
                 comment: '',
             },
@@ -155,10 +156,6 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                     'Registration number is required';
                 hasErrors = true;
             }
-            if (!loads[i].loaded.trim()) {
-                newErrors[`loads.${i}.loaded`] = 'Loaded status is required';
-                hasErrors = true;
-            }
             if (!loads[i].location.trim()) {
                 newErrors[`loads.${i}.location`] = 'Location is required';
                 hasErrors = true;
@@ -197,6 +194,10 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                 loads: formattedLoads,
             },
             {
+                onSuccess: () => {
+                    setIsSubmitting(false);
+                    toast.success('Report created successfully');
+                },
                 onFinish: () => setIsSubmitting(false),
                 onError: (err) => setErrors(err),
             },
@@ -310,10 +311,7 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                                                 </span>
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Loaded{' '}
-                                                <span className="text-destructive">
-                                                    *
-                                                </span>
+                                                Loaded
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
                                                 Location{' '}
@@ -357,7 +355,12 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                                                                 <SelectTrigger className="h-8 w-40">
                                                                     <SelectValue placeholder="Select fleet #" />
                                                                 </SelectTrigger>
-                                                                <SelectContent>
+                                                                <SelectContent
+                                                                    position="popper"
+                                                                    sideOffset={
+                                                                        4
+                                                                    }
+                                                                >
                                                                     {availableTrailers.map(
                                                                         (
                                                                             trailer,
@@ -429,7 +432,12 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                                                                 <SelectTrigger className="h-8 w-40">
                                                                     <SelectValue placeholder="Select reg #" />
                                                                 </SelectTrigger>
-                                                                <SelectContent>
+                                                                <SelectContent
+                                                                    position="popper"
+                                                                    sideOffset={
+                                                                        4
+                                                                    }
+                                                                >
                                                                     {availableTrailers.map(
                                                                         (
                                                                             trailer,
@@ -542,34 +550,68 @@ export default function CreateTrailerLoadedReport({ trailers }: Props) {
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3">
-                                                        <div>
-                                                            <Input
-                                                                value={
-                                                                    load.location
+                                                        <Select
+                                                            value={
+                                                                load.location
+                                                            }
+                                                            onValueChange={(
+                                                                value,
+                                                            ) =>
+                                                                updateLoad(
+                                                                    index,
+                                                                    'location',
+                                                                    value,
+                                                                )
+                                                            }
+                                                        >
+                                                            <SelectTrigger className="h-8 w-40">
+                                                                <SelectValue placeholder="Select location" />
+                                                            </SelectTrigger>
+                                                            <SelectContent
+                                                                position="popper"
+                                                                sideOffset={4}
+                                                            >
+                                                                {[
+                                                                    'Bolt',
+                                                                    'Freedom Way',
+                                                                    'Graph',
+                                                                    'Maintenance',
+                                                                    'MPT',
+                                                                    'Neptune',
+                                                                    'Service',
+                                                                    'Woodstock',
+                                                                    'Yacht Club',
+                                                                ].map(
+                                                                    (
+                                                                        location,
+                                                                    ) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                location
+                                                                            }
+                                                                            value={
+                                                                                location
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                location
+                                                                            }
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        {errors[
+                                                            `loads.${index}.location`
+                                                        ] && (
+                                                            <p className="text-sm text-destructive">
+                                                                {
+                                                                    errors[
+                                                                        `loads.${index}.location`
+                                                                    ]
                                                                 }
-                                                                onChange={(e) =>
-                                                                    updateLoad(
-                                                                        index,
-                                                                        'location',
-                                                                        e.target
-                                                                            .value,
-                                                                    )
-                                                                }
-                                                                placeholder="Location"
-                                                                className="h-8 w-40"
-                                                            />
-                                                            {errors[
-                                                                `loads.${index}.location`
-                                                            ] && (
-                                                                <p className="text-sm text-destructive">
-                                                                    {
-                                                                        errors[
-                                                                            `loads.${index}.location`
-                                                                        ]
-                                                                    }
-                                                                </p>
-                                                            )}
-                                                        </div>
+                                                            </p>
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <Input

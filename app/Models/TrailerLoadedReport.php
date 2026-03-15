@@ -26,4 +26,14 @@ class TrailerLoadedReport extends Model
     {
         return 'date';
     }
+
+    public function getRouteKey(): string
+    {
+        return $this->date->format('Y-m-d');
+    }
+
+    public function resolveRouteBinding($value, $field = null): ?Model
+    {
+        return static::whereDate('date', $value)->first();
+    }
 }

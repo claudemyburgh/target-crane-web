@@ -42,6 +42,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admi
     Route::get('trailer-loaded-reports/pdf', [TrailerLoadedReportController::class, 'pdfRange'])->name('trailer-loaded-reports.pdf');
     Route::get('trailer-loaded-reports/{trailerLoadedReport}', [TrailerLoadedReportController::class, 'show'])->name('trailer-loaded-reports.show');
     Route::get('trailer-loaded-reports/{trailerLoadedReport}/pdf', [TrailerLoadedReportController::class, 'pdf'])->name('trailer-loaded-reports.single-pdf-legacy');
+    Route::get('trailer-loaded-reports/{trailerLoadedReport}/excel', [TrailerLoadedReportController::class, 'excel'])->name('trailer-loaded-reports.excel');
+    Route::post('trailer-loaded-reports/{trailerLoadedReport}/email', [TrailerLoadedReportController::class, 'email'])->name('trailer-loaded-reports.email');
 
     Route::resource('users', UserAdminController::class);
     Route::post('users/{user}/restore', [UserAdminController::class, 'restore'])->name('users.restore');

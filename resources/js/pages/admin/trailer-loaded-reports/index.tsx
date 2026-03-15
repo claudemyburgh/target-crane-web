@@ -9,6 +9,7 @@ import {
     Plus,
     X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import * as React from 'react';
 import Heading from '@/components/heading';
 import StatSimple from '@/components/stats/stat-simple';
@@ -44,7 +45,7 @@ import type { BreadcrumbItem } from '@/types';
 type LoadItem = {
     fleet_number: string;
     registration_number: string;
-    loaded: boolean;
+    loaded: string;
     location: string;
     comment: string;
 };
@@ -86,7 +87,10 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
     const loadedCount = React.useMemo(
         () =>
             reports.data.reduce(
-                (acc, r) => acc + r.loads.filter((l) => l.loaded).length,
+                (acc, r) =>
+                    acc +
+                    r.loads.filter((l) => l.loaded && l.loaded !== 'Empty')
+                        .length,
                 0,
             ),
         [reports.data],
@@ -94,7 +98,10 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
     const emptyCount = React.useMemo(
         () =>
             reports.data.reduce(
-                (acc, r) => acc + r.loads.filter((l) => !l.loaded).length,
+                (acc, r) =>
+                    acc +
+                    r.loads.filter((l) => !l.loaded || l.loaded === 'Empty')
+                        .length,
                 0,
             ),
         [reports.data],
@@ -103,8 +110,12 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
     const events: CalendarEvent[] = React.useMemo(
         () =>
             reports.data.map((report) => {
-                const loadedCount = report.loads.filter((l) => l.loaded).length;
-                const emptyCount = report.loads.filter((l) => !l.loaded).length;
+                const loadedCount = report.loads.filter(
+                    (l) => l.loaded && l.loaded !== 'Empty',
+                ).length;
+                const emptyCount = report.loads.filter(
+                    (l) => !l.loaded || l.loaded === 'Empty',
+                ).length;
                 return {
                     id: String(report.id),
                     start: new Date(report.date),
@@ -140,6 +151,11 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
                 trailerLoadedReport: confirmDelete.date.split('T')[0],
             } as unknown as Parameters<typeof destroy>[0]),
             {
+                onSuccess: () => {
+                    setIsDeleting(false);
+                    setConfirmDelete(null);
+                    toast.success('Report deleted successfully');
+                },
                 onFinish: () => {
                     setIsDeleting(false);
                     setConfirmDelete(null);

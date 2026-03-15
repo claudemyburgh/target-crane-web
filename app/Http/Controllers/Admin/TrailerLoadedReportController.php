@@ -4,13 +4,19 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TrailerLoadedReportFormRequest;
+use App\Mail\TrailerLoadedReportMail;
 use App\Models\Trailer;
 use App\Models\TrailerLoadedReport;
+use App\Models\User;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Spatie\LaravelPdf\Facades\Pdf;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Spatie\SimpleExcel\SimpleExcelWriter;
 
 class TrailerLoadedReportController extends Controller
 {
@@ -112,15 +118,23 @@ class TrailerLoadedReportController extends Controller
 
         $trailerLoadedReport->update($request->validated());
 
-        return to_route('admin.trailer-loaded-reports.index');
+        return back();
     }
 
     public function show(Request $request, TrailerLoadedReport $trailerLoadedReport)
     {
         $this->authorize('view', $trailerLoadedReport);
 
+        $users = User::orderBy('name')->get(['id', 'name', 'email']);
+
         return Inertia::render('admin/trailer-loaded-reports/show', [
-            'report' => $trailerLoadedReport,
+            'report' => [
+                'id' => $trailerLoadedReport->id,
+                'date' => $trailerLoadedReport->date->format('Y-m-d'),
+                'loads' => $trailerLoadedReport->loads,
+                'created_at' => $trailerLoadedReport->created_at->toIsoString(),
+            ],
+            'users' => $users,
         ]);
     }
 
@@ -144,6 +158,104 @@ class TrailerLoadedReportController extends Controller
         return $this->pdfRange($request);
     }
 
+    public function excel(Request $request, TrailerLoadedReport $trailerLoadedReport)
+    {
+        $this->authorize('view', $trailerLoadedReport);
+
+        $trailers = Trailer::orderBy('fleet_number')->get();
+
+        $loadsByFleet = [];
+        foreach ($trailerLoadedReport->loads as $load) {
+            $loadsByFleet[$load['fleet_number']] = $load;
+        }
+
+        $reportData = $trailers->map(function ($trailer) use ($loadsByFleet) {
+            $load = $loadsByFleet[$trailer->fleet_number] ?? null;
+
+            return [
+                'fleet_number' => $trailer->fleet_number,
+                'registration_number' => $trailer->registration_number,
+                'status' => $load['loaded'] ?: 'Empty',
+                'location' => $load['location'] ?? '',
+                'comment' => $load['comment'] ?? '',
+            ];
+        });
+
+        $fileName = 'trailer-report-'.$trailerLoadedReport->date->format('Y-m-d').'.xlsx';
+
+        return response()->streamDownload(function () use ($reportData) {
+            $writer = SimpleExcelWriter::createDownloadStream('xlsx');
+            $writer->addRows($reportData->toArray());
+            $writer->close();
+        }, $fileName);
+    }
+
+    public function email(Request $request, TrailerLoadedReport $trailerLoadedReport)
+    {
+        $this->authorize('view', $trailerLoadedReport);
+
+        $request->validate([
+            'user_ids' => 'required|array|min:1',
+            'user_ids.*' => 'integer|exists:users,id',
+        ]);
+
+        $users = User::whereIn('id', $request->user_ids)->get();
+
+        $pdfContent = $this->generateSingleDayPdfContent($trailerLoadedReport);
+
+        foreach ($users as $user) {
+            Mail::to($user->email)->send(new TrailerLoadedReportMail($trailerLoadedReport, $pdfContent));
+        }
+
+        return back()->with('success', 'Report sent to '.$users->count().' recipient(s).');
+    }
+
+    private function generateSingleDayPdfContent(TrailerLoadedReport $report)
+    {
+        $trailers = Trailer::orderBy('fleet_number')->get();
+
+        $loadsByFleet = [];
+        foreach ($report->loads as $load) {
+            $loadsByFleet[$load['fleet_number']] = $load;
+        }
+
+        $reportData = $trailers->map(function ($trailer) use ($loadsByFleet) {
+            $load = $loadsByFleet[$trailer->fleet_number] ?? null;
+
+            return [
+                'fleet_number' => $trailer->fleet_number,
+                'registration_number' => $trailer->registration_number,
+                'loaded' => $load['loaded'] ?: 'Empty',
+                'location' => $load['location'] ?? '',
+                'comment' => $load['comment'] ?? '',
+            ];
+        });
+
+        $loadedCount = $reportData->filter(fn ($t) => $t['loaded'] && $t['loaded'] !== 'Empty')->count();
+        $emptyCount = $reportData->filter(fn ($t) => ! $t['loaded'] || $t['loaded'] === 'Empty')->count();
+
+        $html = view('pdf.trailer-loaded-report', [
+            'title' => 'Trailer Loaded Report',
+            'dateRange' => $report->date->format('d M Y'),
+            'endDate' => $report->date,
+            'startDate' => $report->date,
+            'trailers' => $reportData,
+            'loadedCount' => $loadedCount,
+            'emptyCount' => $emptyCount,
+            'showDates' => false,
+        ])->render();
+
+        $options = new Options;
+        $options->setIsRemoteEnabled(true);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return $dompdf->output();
+    }
+
     private function generateSingleDayPdf(TrailerLoadedReport $report)
     {
         $this->authorize('view', $report);
@@ -161,14 +273,14 @@ class TrailerLoadedReportController extends Controller
             return [
                 'fleet_number' => $trailer->fleet_number,
                 'registration_number' => $trailer->registration_number,
-                'loaded' => $load ? $load['loaded'] : false,
+                'loaded' => $load['loaded'] ?: 'Empty',
                 'location' => $load['location'] ?? '',
                 'comment' => $load['comment'] ?? '',
             ];
         });
 
-        $loadedCount = $reportData->filter(fn ($t) => $t['loaded'])->count();
-        $emptyCount = $reportData->filter(fn ($t) => ! $t['loaded'])->count();
+        $loadedCount = $reportData->filter(fn ($t) => $t['loaded'] && $t['loaded'] !== 'Empty')->count();
+        $emptyCount = $reportData->filter(fn ($t) => ! $t['loaded'] || $t['loaded'] === 'Empty')->count();
 
         return Pdf::view('pdf.trailer-loaded-report', [
             'title' => 'Trailer Loaded Report',
@@ -240,7 +352,7 @@ class TrailerLoadedReportController extends Controller
             $empty = 0;
             foreach ($matrix as $fleetNumber => $data) {
                 if (isset($data['dates'][$dateKey])) {
-                    if ($data['dates'][$dateKey]['loaded']) {
+                    if ($data['dates'][$dateKey]['loaded'] && $data['dates'][$dateKey]['loaded'] !== 'Empty') {
                         $loaded++;
                     } else {
                         $empty++;

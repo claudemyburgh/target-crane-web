@@ -3,6 +3,7 @@ import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 import { index as trailersIndex, show, update } from '@/routes/admin/trailers';
@@ -35,7 +36,10 @@ export default function Edit({ trailer }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        form.submit(update({ trailer: trailer.id }), { preserveScroll: true });
+        form.submit(update({ trailer: trailer.id }), {
+            preserveScroll: true,
+            onSuccess: () => toast.success('Trailer updated successfully'),
+        });
     };
 
     return (

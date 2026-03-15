@@ -17,7 +17,7 @@ export default function AppSidebarLayout({
                 <ImpersonationBanner />
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 {children}
-                <Toaster position="top-center" />
+                <Toaster position="top-right" />
             </AppContent>
         </AppShell>
     );
