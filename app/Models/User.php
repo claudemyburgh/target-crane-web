@@ -22,6 +22,10 @@ use Spatie\Permission\Traits\HasRoles;
 #[ObservedBy([UserObserver::class])]
 class User extends Authenticatable implements HasMedia, MustVerifyEmail, Sortable
 {
+    protected $with = [
+        'media',
+    ];
+
     /**
      * Accessors that should be appended to the model's array form.
      *

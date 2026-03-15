@@ -11,6 +11,7 @@ use App\Models\User;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Spatie\LaravelPdf\Facades\Pdf;
@@ -27,6 +28,7 @@ class TrailerLoadedReportController extends Controller
         $perPage = $request->integer('per_page', 25);
 
         $reports = QueryBuilder::for(TrailerLoadedReport::class)
+            ->select(['id', 'date', 'loads', 'created_at', 'updated_at'])
             ->orderBy('date', 'desc')
             ->allowedFilters([
                 AllowedFilter::callback('search', function ($query, $value) {
@@ -67,7 +69,7 @@ class TrailerLoadedReportController extends Controller
     {
         $this->authorize('create', TrailerLoadedReport::class);
 
-        $trailers = Trailer::orderBy('fleet_number')->get(['id', 'fleet_number', 'registration_number']);
+        $trailers = $this->getCachedTrailersSelect();
 
         return Inertia::render('admin/trailer-loaded-reports/create', [
             'trailers' => $trailers,
@@ -92,7 +94,7 @@ class TrailerLoadedReportController extends Controller
     {
         $this->authorize('update', $trailerLoadedReport);
 
-        $trailers = Trailer::orderBy('fleet_number')->get(['id', 'fleet_number', 'registration_number']);
+        $trailers = $this->getCachedTrailersSelect();
 
         return Inertia::render('admin/trailer-loaded-reports/edit', [
             'report' => [
@@ -162,7 +164,7 @@ class TrailerLoadedReportController extends Controller
     {
         $this->authorize('view', $trailerLoadedReport);
 
-        $trailers = Trailer::orderBy('fleet_number')->get();
+        $trailers = $this->getCachedTrailersFull();
 
         $loadsByFleet = [];
         foreach ($trailerLoadedReport->loads as $load) {
@@ -175,7 +177,7 @@ class TrailerLoadedReportController extends Controller
             return [
                 'fleet_number' => $trailer->fleet_number,
                 'registration_number' => $trailer->registration_number,
-                'status' => $load['loaded'] ?: 'Empty',
+                'status' => $load && $load['loaded'] ? $load['loaded'] : 'Empty',
                 'location' => $load['location'] ?? '',
                 'comment' => $load['comment'] ?? '',
             ];
@@ -183,11 +185,9 @@ class TrailerLoadedReportController extends Controller
 
         $fileName = 'trailer-report-'.$trailerLoadedReport->date->format('Y-m-d').'.xlsx';
 
-        return response()->streamDownload(function () use ($reportData) {
-            $writer = SimpleExcelWriter::createDownloadStream('xlsx');
-            $writer->addRows($reportData->toArray());
-            $writer->close();
-        }, $fileName);
+        return SimpleExcelWriter::streamDownload($fileName)
+            ->addRows($reportData->toArray())
+            ->toBrowser();
     }
 
     public function email(Request $request, TrailerLoadedReport $trailerLoadedReport)
@@ -204,7 +204,7 @@ class TrailerLoadedReportController extends Controller
         $pdfContent = $this->generateSingleDayPdfContent($trailerLoadedReport);
 
         foreach ($users as $user) {
-            Mail::to($user->email)->send(new TrailerLoadedReportMail($trailerLoadedReport, $pdfContent));
+            Mail::to($user->email)->queue(new TrailerLoadedReportMail($trailerLoadedReport, $pdfContent));
         }
 
         return back()->with('success', 'Report sent to '.$users->count().' recipient(s).');
@@ -212,7 +212,7 @@ class TrailerLoadedReportController extends Controller
 
     private function generateSingleDayPdfContent(TrailerLoadedReport $report)
     {
-        $trailers = Trailer::orderBy('fleet_number')->get();
+        $trailers = $this->getCachedTrailersFull();
 
         $loadsByFleet = [];
         foreach ($report->loads as $load) {
@@ -225,7 +225,7 @@ class TrailerLoadedReportController extends Controller
             return [
                 'fleet_number' => $trailer->fleet_number,
                 'registration_number' => $trailer->registration_number,
-                'loaded' => $load['loaded'] ?: 'Empty',
+                'loaded' => $load && $load['loaded'] ? $load['loaded'] : 'Empty',
                 'location' => $load['location'] ?? '',
                 'comment' => $load['comment'] ?? '',
             ];
@@ -260,7 +260,7 @@ class TrailerLoadedReportController extends Controller
     {
         $this->authorize('view', $report);
 
-        $trailers = Trailer::orderBy('fleet_number')->get();
+        $trailers = $this->getCachedTrailersFull();
 
         $loadsByFleet = [];
         foreach ($report->loads as $load) {
@@ -273,7 +273,7 @@ class TrailerLoadedReportController extends Controller
             return [
                 'fleet_number' => $trailer->fleet_number,
                 'registration_number' => $trailer->registration_number,
-                'loaded' => $load['loaded'] ?: 'Empty',
+                'loaded' => $load && $load['loaded'] ? $load['loaded'] : 'Empty',
                 'location' => $load['location'] ?? '',
                 'comment' => $load['comment'] ?? '',
             ];
@@ -314,7 +314,7 @@ class TrailerLoadedReportController extends Controller
             $current->addDay();
         }
 
-        $trailers = Trailer::orderBy('fleet_number')->get();
+        $trailers = $this->getCachedTrailersFull();
 
         $matrix = [];
         foreach ($trailers as $trailer) {
@@ -382,5 +382,17 @@ class TrailerLoadedReportController extends Controller
         $trailerLoadedReport->delete();
 
         return to_route('admin.trailer-loaded-reports.index');
+    }
+
+    private function getCachedTrailersSelect()
+    {
+        return Cache::remember('trailers_select_list', 86400, fn () => Trailer::orderBy('fleet_number')->get(['id', 'fleet_number', 'registration_number'])
+        );
+    }
+
+    private function getCachedTrailersFull()
+    {
+        return Cache::remember('trailers_full_list', 86400, fn () => Trailer::orderBy('fleet_number')->get()
+        );
     }
 }

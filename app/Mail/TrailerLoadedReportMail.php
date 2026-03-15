@@ -42,7 +42,7 @@ class TrailerLoadedReportMail extends Mailable
             return [
                 'fleet_number' => $trailer->fleet_number,
                 'registration_number' => $trailer->registration_number,
-                'status' => $load['loaded'] ?: 'Empty',
+                'status' => $load && $load['loaded'] ? $load['loaded'] : 'Empty',
                 'location' => $load['location'] ?? '',
             ];
         });

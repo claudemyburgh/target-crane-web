@@ -43,7 +43,6 @@ import trailerLoadedReportsRoutes from '@/routes/admin/trailer-loaded-reports';
 import type { BreadcrumbItem } from '@/types';
 
 const routes = trailerLoadedReportsRoutes as any;
-const { edit, index } = routes;
 
 type LoadItem = {
     fleet_number: string;
@@ -175,21 +174,21 @@ export default function ShowTrailerLoadedReport({ report, users }: Props) {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild>
-                                    <Link
-                                        href={`/admin/trailer-loaded-reports/pdf/${report.date}`}
-                                    >
-                                        <Download className="mr-2 h-4 w-4" />
-                                        Download PDF
-                                    </Link>
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        window.location.href = `/admin/trailer-loaded-reports/${report.date}/pdf`;
+                                    }}
+                                >
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download PDF
                                 </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link
-                                        href={`/admin/trailer-loaded-reports/${report.date}/excel`}
-                                    >
-                                        <FileSpreadsheet className="mr-2 h-4 w-4" />
-                                        Download Excel
-                                    </Link>
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        window.location.href = `/admin/trailer-loaded-reports/${report.date}/excel`;
+                                    }}
+                                >
+                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                    Download Excel
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -289,14 +288,13 @@ export default function ShowTrailerLoadedReport({ report, users }: Props) {
                                         <TableCell>
                                             {load.loaded &&
                                             load.loaded !== 'Empty' ? (
-                                                <Badge variant="default">
-                                                    <Check className="mr-1 h-3 w-3" />
-                                                    {load.loaded}
-                                                </Badge>
-                                            ) : (
                                                 <span className="text-muted-foreground">
-                                                    Empty
+                                                    {load.loaded}
                                                 </span>
+                                            ) : (
+                                                <Badge variant="default">
+                                                    Empty
+                                                </Badge>
                                             )}
                                         </TableCell>
                                         <TableCell>
