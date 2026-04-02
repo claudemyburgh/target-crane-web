@@ -152,7 +152,7 @@ const EventCalendarHeader = () => {
     }, [date, view, locale]);
 
     return (
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col gap-3 mb-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={handlePrev}>
                     <ChevronLeft className="h-4 w-4" />
@@ -163,7 +163,7 @@ const EventCalendarHeader = () => {
                 <Button variant="outline" size="sm" onClick={handleNext}>
                     <ChevronRight className="h-4 w-4" />
                 </Button>
-                <h2 className="text-lg font-semibold ml-2">{dateLabel}</h2>
+                <h2 className="text-sm font-semibold ml-2 sm:text-lg">{dateLabel}</h2>
             </div>
             <div className="flex items-center gap-1">
                 <Button
@@ -195,7 +195,8 @@ const EventCalendarWeekView = () => {
 
     return (
         <div className="border rounded-lg overflow-hidden">
-            <div className="grid grid-cols-7 border-b bg-muted/50">
+            {/* Desktop: 7-column grid */}
+            <div className="hidden sm:grid grid-cols-7 border-b bg-muted/50">
                 {weekDays.map((day) => (
                     <div
                         key={day.toString()}
@@ -229,7 +230,7 @@ const EventCalendarWeekView = () => {
                     </div>
                 ))}
             </div>
-            <div className="grid grid-cols-7 min-h-[200px]">
+            <div className="hidden sm:grid grid-cols-7 min-h-[200px]">
                 {weekDays.map((day) => {
                     const dayEvents = events.filter((event) =>
                         isSameDay(event.start, day)
@@ -269,6 +270,68 @@ const EventCalendarWeekView = () => {
                     );
                 })}
             </div>
+
+            {/* Mobile: stacked list */}
+            <div className="sm:hidden divide-y">
+                {weekDays.map((day) => {
+                    const dayEvents = events.filter((event) =>
+                        isSameDay(event.start, day)
+                    );
+
+                    return (
+                        <div
+                            key={day.toString()}
+                            className={cn(
+                                'group p-3 space-y-1.5',
+                                isToday(day) && 'bg-primary/5'
+                            )}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div
+                                        className={cn(
+                                            'text-sm font-semibold',
+                                            isToday(day)
+                                                ? 'bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center'
+                                                : 'text-foreground'
+                                        )}
+                                    >
+                                        {format(day, 'd')}
+                                    </div>
+                                    <span className="text-sm text-muted-foreground">
+                                        {format(day, 'EEEE', { locale })}
+                                    </span>
+                                </div>
+                                {enableAddButton && onAddEvent && (
+                                    <button
+                                        onClick={() => onAddEvent(day)}
+                                        className="p-1 rounded hover:bg-primary/20 text-primary transition-colors"
+                                        title="Add event"
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                    </button>
+                                )}
+                            </div>
+                            {dayEvents.map((event) => (
+                                <div
+                                    key={event.id}
+                                    className={cn(
+                                        'px-2 py-1.5 rounded text-sm cursor-pointer hover:opacity-80 transition-opacity font-medium',
+                                        getEventColor(event.variant)
+                                    )}
+                                    onClick={() => onEventClick?.(event)}
+                                    title={event.title}
+                                >
+                                    {event.title}
+                                </div>
+                            ))}
+                            {dayEvents.length === 0 && (
+                                <p className="text-xs text-muted-foreground italic">No events</p>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 };
@@ -302,9 +365,10 @@ const EventCalendarMonthView = () => {
                 {weekDays.map((day) => (
                     <div
                         key={day.toString()}
-                        className="p-3 text-center text-sm font-medium text-muted-foreground"
+                        className="p-1.5 text-center text-xs font-medium text-muted-foreground sm:p-3 sm:text-sm"
                     >
-                        {format(day, 'EEE', { locale })}
+                        <span className="sm:hidden">{format(day, 'EEEEE', { locale })}</span>
+                        <span className="hidden sm:inline">{format(day, 'EEE', { locale })}</span>
                     </div>
                 ))}
             </div>
@@ -318,18 +382,18 @@ const EventCalendarMonthView = () => {
                         <div
                             key={day.toString()}
                             className={cn(
-                                'group min-h-[120px] border-b border-r p-2',
+                                'group min-h-[60px] border-b border-r p-1 sm:min-h-[120px] sm:p-2',
                                 !isSameMonth(date, day) && 'bg-muted/30',
                                 getDay(day) === 0 && 'border-l-0',
                                 getDay(day) === 6 && 'border-r-0'
                             )}
                         >
-                            <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center justify-between mb-1 sm:mb-2">
                                 <div
                                     className={cn(
-                                        'text-sm font-medium',
+                                        'text-xs font-medium sm:text-sm',
                                         isToday(day)
-                                            ? 'bg-primary text-primary-foreground rounded-full w-7 h-7 flex items-center justify-center'
+                                            ? 'bg-primary text-primary-foreground rounded-full w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center text-[10px] sm:text-sm'
                                             : 'text-muted-foreground'
                                     )}
                                 >
@@ -345,12 +409,12 @@ const EventCalendarMonthView = () => {
                                     </button>
                                 )}
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-0.5 sm:space-y-1">
                                 {dayEvents.slice(0, 3).map((event) => (
                                     <div
                                         key={event.id}
                                         className={cn(
-                                            'px-2 py-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity truncate font-medium',
+                                            'px-1 py-0.5 rounded text-[10px] leading-tight cursor-pointer hover:opacity-80 transition-opacity truncate font-medium sm:px-2 sm:py-1 sm:text-xs',
                                             getEventColor(event.variant)
                                         )}
                                         onClick={() => onEventClick?.(event)}
@@ -360,7 +424,7 @@ const EventCalendarMonthView = () => {
                                     </div>
                                 ))}
                                 {dayEvents.length > 3 && (
-                                    <div className="text-xs text-muted-foreground px-1 font-medium">
+                                    <div className="text-[10px] text-muted-foreground px-1 font-medium sm:text-xs">
                                         +{dayEvents.length - 3} more
                                     </div>
                                 )}

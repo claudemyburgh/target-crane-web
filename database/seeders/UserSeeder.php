@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
@@ -13,10 +12,22 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->times(1000)
-            ->state(new Sequence(
-                fn ($sequence) => ['created_at' => now()->subDays($sequence->index)],
-            ))
-            ->create();
+
+        $users = [
+            [
+                'name' => 'Claude Myburgh',
+                'email' => 'claude@designbycode.co.za',
+                'password' => 'password',
+            ],
+            [
+                'name' => 'Pam',
+                'email' => 'pam@teemanecranes.co.za',
+                'password' => 'password',
+            ],
+        ];
+
+        foreach ($users as $user) {
+            User::create($user);
+        }
     }
 }

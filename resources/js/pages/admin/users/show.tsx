@@ -9,7 +9,15 @@ import { dashboard } from '@/routes/admin';
 import { edit as usersEdit, index as usersIndex } from '@/routes/admin/users';
 import type { BreadcrumbItem } from '@/types';
 
-export default function AdminUsersShow({ user }: { user: any }) {
+export default function AdminUsersShow({
+    user,
+    can,
+}: {
+    user: any;
+    can?: {
+        edit?: boolean;
+    };
+}) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Admin Dashboard', href: dashboard() },
         { title: 'Users', href: usersIndex() },
@@ -44,12 +52,14 @@ export default function AdminUsersShow({ user }: { user: any }) {
                                     Back
                                 </Button>
                             </Link>
-                            <Link href={usersEdit(user.uuid)}>
-                                <Button size="sm" variant="secondary">
-                                    <Pencil className="mr-0 h-4 w-4" />
-                                    Edit
-                                </Button>
-                            </Link>
+                            {can?.edit && (
+                                <Link href={usersEdit(user.uuid)}>
+                                    <Button size="sm" variant="secondary">
+                                        <Pencil className="mr-0 h-4 w-4" />
+                                        Edit
+                                    </Button>
+                                </Link>
+                            )}
                         </div>
                     }
                 />

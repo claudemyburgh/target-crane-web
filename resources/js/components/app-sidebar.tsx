@@ -4,7 +4,9 @@ import {
     ChevronsUpDown,
     FolderGit2,
     Gauge,
+    Key,
     LayoutGrid,
+    Link2Icon,
     Shield,
     Truck,
     User,
@@ -18,6 +20,8 @@ import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
+    SidebarGroup,
+    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -30,6 +34,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { usePermissions } from '@/hooks/use-permissions';
 import { dashboard } from '@/routes';
 import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as permissionsIndex } from '@/routes/admin/permissions';
+import { index as rolesIndex } from '@/routes/admin/roles';
 import { index as trailersIndex } from '@/routes/admin/trailers';
 import { index as adminUsersIndex } from '@/routes/admin/users';
 import type { NavItem } from '@/types';
@@ -52,50 +58,55 @@ const mainNavItemsBase: NavItem[] = [
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: '#',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: '#',
-        icon: BookOpen,
+        title: 'DesignByCode',
+        href: 'https://designbycode.co.za',
+        icon: Link2Icon,
     },
 ];
 
 export function AppSidebar() {
-    const { isAdmin } = usePermissions();
+    const { isAdmin, isModerator } = usePermissions();
     const { state } = useSidebar();
     const isMobile = useIsMobile();
-    const { currentUrl } = useCurrentUrl();
+    const { currentUrl, isCurrentUrl } = useCurrentUrl();
     const inAdminSection = currentUrl.startsWith('/admin');
-    const canAccessAdmin = isAdmin();
+    const canAccessAdmin = isAdmin() || isModerator();
 
-    const navItems =
-        inAdminSection && canAccessAdmin
-            ? [
-                  {
-                      title: 'Dashboard',
-                      href: adminDashboard(),
-                      icon: Gauge,
-                  },
-                  {
-                      title: 'Users',
-                      href: adminUsersIndex(),
-                      icon: Users,
-                  },
-                  {
-                      title: 'Trailers',
-                      href: trailersIndex(),
-                      icon: Truck,
-                  },
-                  {
-                      title: 'Trailer Reports',
-                      href: '/admin/trailer-loaded-reports',
-                      icon: Truck,
-                  },
-              ]
-            : mainNavItemsBase;
+    const adminNavItems: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: adminDashboard(),
+            icon: Gauge,
+        },
+        {
+            title: 'Users',
+            href: adminUsersIndex(),
+            icon: Users,
+        },
+        {
+            title: 'Trailers',
+            href: trailersIndex(),
+            icon: Truck,
+        },
+        {
+            title: 'Trailer Reports',
+            href: '/admin/trailer-loaded-reports',
+            icon: Truck,
+        },
+    ];
+
+    const rolesPermissionsItems: NavItem[] = [
+        {
+            title: 'Roles',
+            href: rolesIndex(),
+            icon: Shield,
+        },
+        {
+            title: 'Permissions',
+            href: permissionsIndex(),
+            icon: Key,
+        },
+    ];
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -126,7 +137,7 @@ export function AppSidebar() {
                                         }
                                         sideOffset={4}
                                     >
-                                        <DropdownMenuLabel className="text-xs text-muted-foreground">
+                                        <DropdownMenuLabel className="text-muted-foreground text-xs">
                                             Switch Navigation
                                         </DropdownMenuLabel>
                                         <DropdownMenuItem asChild>
@@ -167,7 +178,60 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={navItems} />
+                {inAdminSection && canAccessAdmin ? (
+                    <>
+                        <SidebarGroup>
+                            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+                            <SidebarMenu>
+                                {adminNavItems.map((item) => (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={isCurrentUrl(
+                                                item.href as string,
+                                            )}
+                                            tooltip={{ children: item.title }}
+                                        >
+                                            <Link href={item.href} prefetch>
+                                                {item.icon && <item.icon />}
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))}
+                            </SidebarMenu>
+                        </SidebarGroup>
+                        {isAdmin() && (
+                            <SidebarGroup>
+                                <SidebarGroupLabel>
+                                    Roles & Permissions
+                                </SidebarGroupLabel>
+                                <SidebarMenu>
+                                    {rolesPermissionsItems.map((item) => (
+                                        <SidebarMenuItem key={item.title}>
+                                            <SidebarMenuButton
+                                                asChild
+                                                isActive={isCurrentUrl(
+                                                    item.href as string,
+                                                )}
+                                                tooltip={{
+                                                    children: item.title,
+                                                }}
+                                            >
+                                                <Link href={item.href} prefetch>
+                                                    {item.icon && <item.icon />}
+                                                    <span>{item.title}</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    ))}
+                                </SidebarMenu>
+                            </SidebarGroup>
+                        )}
+                    </>
+                ) : (
+                    <NavMain items={mainNavItemsBase} />
+                )}
             </SidebarContent>
 
             <SidebarFooter>

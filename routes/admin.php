@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ImpersonationController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\TrailerController;
 use App\Http\Controllers\Admin\TrailerLoadedReportController;
 use App\Http\Controllers\Admin\UserAdminController;
@@ -25,7 +27,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->as('admin.')->group(fu
     Route::post('trailers/bulk', [TrailerController::class, 'bulk'])->name('trailers.bulk');
 });
 
-Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admin.')->group(function () {
+Route::middleware(['auth', 'verified', 'role:admin|moderator'])->prefix('admin')->as('admin.')->group(function () {
     // Dashboard
     Route::get('/dashboard', DashboardAdminController::class)->name('dashboard');
 
@@ -45,7 +47,14 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admi
     Route::get('trailer-loaded-reports/{trailerLoadedReport}/excel', [TrailerLoadedReportController::class, 'excel'])->name('trailer-loaded-reports.excel');
     Route::post('trailer-loaded-reports/{trailerLoadedReport}/email', [TrailerLoadedReportController::class, 'email'])->name('trailer-loaded-reports.email');
 
-    Route::resource('users', UserAdminController::class);
+    // Moderator can only view users (index and show)
+    Route::get('users', [UserAdminController::class, 'index'])->name('users.index');
+    Route::get('users/{user}', [UserAdminController::class, 'show'])->name('users.show');
+});
+
+Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admin.')->group(function () {
+    // Full user management (admin only)
+    Route::resource('users', UserAdminController::class)->except(['index', 'show']);
     Route::post('users/{user}/restore', [UserAdminController::class, 'restore'])->name('users.restore');
     Route::post('users/{user}/ban', [UserAdminController::class, 'ban'])->name('users.ban');
     Route::post('users/{user}/unban', [UserAdminController::class, 'unban'])->name('users.unban');
@@ -59,4 +68,10 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admi
     Route::post('users/bulk', [UserAdminController::class, 'bulk'])->name('users.bulk');
 
     Route::post('users/{user}/impersonate', [ImpersonationController::class, 'start'])->name('users.impersonate');
+
+    // Roles management
+    Route::resource('roles', RoleController::class);
+
+    // Permissions management
+    Route::resource('permissions', PermissionController::class);
 });

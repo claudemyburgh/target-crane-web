@@ -19,27 +19,27 @@ class DatabaseSeeder extends Seeder
 
         // Create admin user
         $admin = User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
+            'name' => 'Claude Myburgh',
+            'email' => 'claude@designbycode.co.za',
         ]);
         $admin->assignRole('admin');
 
         // Create moderator user
         $moderator = User::factory()->create([
-            'name' => 'Moderator User',
-            'email' => 'moderator@example.com',
+            'name' => 'Pam',
+            'email' => 'pam@teemanecranes.co.za',
         ]);
         $moderator->assignRole('moderator');
 
         // Create regular test user
-        $user = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-        $user->assignRole('user');
+        //        $user = User::factory()->create([
+        //            'name' => 'Test User',
+        //            'email' => 'test@example.com',
+        //        ]);
+        //        $user->assignRole('user');
 
         $this->call([
-            UserSeeder::class,
+            //            UserSeeder::class,
             TrailerSeeder::class,
             TrailerLoadedReportSeeder::class,
         ]);

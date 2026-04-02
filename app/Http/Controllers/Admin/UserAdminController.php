@@ -112,13 +112,20 @@ class UserAdminController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(User $user): Response
+    public function show(Request $request, User $user): Response
     {
         $this->authorize('view', $user);
         $user->load('roles');
 
         return Inertia::render('admin/users/show', [
             'user' => $user,
+            'can' => [
+                'edit' => $request->user()->can('edit users'),
+                'delete' => $request->user()->can('delete users'),
+                'ban' => $request->user()->can('edit users'),
+                'assign_roles' => $request->user()->can('assign roles'),
+                'impersonate' => $request->user()->can('impersonate users'),
+            ],
         ]);
     }
 

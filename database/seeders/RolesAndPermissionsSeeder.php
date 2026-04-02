@@ -107,7 +107,6 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin' => Permission::where('guard_name', 'web')->pluck('name')->toArray(), // Admin gets all permissions
             'moderator' => [
                 'view users',
-                'edit users',
                 'view dashboard',
                 'view admin dashboard',
                 'view posts',

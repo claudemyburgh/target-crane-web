@@ -174,12 +174,12 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Trailer Loaded Reports" />
             <Wrapper>
-                <div className="mb-6 flex items-center justify-between">
+                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <Heading
                         title="Trailer Loaded Reports"
                         description="View all trailer loaded reports"
                     />
-                    <div className="flex gap-2">
+                    <div className="flex shrink-0 flex-wrap gap-2">
                         <Link href={dashboard()}>
                             <Button variant="secondary" size="sm">
                                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -253,7 +253,7 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
                 </div>
 
                 <Card className="mt-6">
-                    <CardContent className="p-4">
+                    <CardContent className="p-2 sm:p-4">
                         <EventCalendar
                             events={events}
                             onEventClick={handleEventClick}

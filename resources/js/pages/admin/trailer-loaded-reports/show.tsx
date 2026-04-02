@@ -29,6 +29,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import StatSimple from '@/components/stats/stat-simple';
 import {
     Table,
     TableBody,
@@ -220,45 +221,17 @@ export default function ShowTrailerLoadedReport({ report, users }: Props) {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Total Trailers
-                            </CardTitle>
-                            <Truck className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {report.loads.length}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Loaded
-                            </CardTitle>
-                            <Check className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {loadedCount}
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                Empty
-                            </CardTitle>
-                            <X className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold">
-                                {emptyCount}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <StatSimple
+                        title="Total Trailers"
+                        value={report.loads.length}
+                        icon={Truck}
+                    />
+                    <StatSimple
+                        title="Loaded"
+                        value={loadedCount}
+                        icon={Check}
+                    />
+                    <StatSimple title="Empty" value={emptyCount} icon={X} />
                 </div>
 
                 <Card className="mt-6">
