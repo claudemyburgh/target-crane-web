@@ -1,17 +1,8 @@
 <?php
 
+use App\Http\Controllers\Dashboard\DashboardIndexController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Dashboard Routes
-|--------------------------------------------------------------------------
-|
-| Place dashboard-related routes here. Keep using your preferred middleware.
-| Example:
-|
-| Route::middleware(['auth', 'verified'])->group(function () {
-|     // Route::inertia('dashboard', 'dashboard')->name('dashboard');
-| });
-|
-*/
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('dashboard', DashboardIndexController::class)->name('dashboard');
+});

@@ -36,6 +36,7 @@ import { index as permissionsIndex } from '@/routes/admin/permissions';
 import { index as rolesIndex } from '@/routes/admin/roles';
 import { index as trailersIndex } from '@/routes/admin/trailers';
 import { index as adminUsersIndex } from '@/routes/admin/users';
+import { index as userTrailerReportsIndex } from '@/routes/user/trailer-reports';
 import type { NavItem } from '@/types';
 import {
     DropdownMenu,
@@ -52,6 +53,11 @@ const mainNavItemsBase: NavItem[] = [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: 'Trailer Reports',
+        href: userTrailerReportsIndex(),
+        icon: Truck,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
@@ -63,11 +69,13 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const { isAdmin, isModerator } = usePermissions();
+    const { isAdmin, isModerator, isUser } = usePermissions();
     const { state } = useSidebar();
     const isMobile = useIsMobile();
     const { currentUrl, isCurrentUrl } = useCurrentUrl();
     const inAdminSection = currentUrl.startsWith('/admin');
+    const inUserSection = currentUrl.startsWith('/user');
+    const canAccessUser = isUser();
     const canAccessAdmin = isAdmin() || isModerator();
 
     const adminNavItems: NavItem[] = [
@@ -234,7 +242,7 @@ export function AppSidebar() {
 
             <SidebarFooter>
                 <NavFooter items={footerNavItems} className="mt-auto" />
-                <NavUser  />
+                <NavUser />
             </SidebarFooter>
         </Sidebar>
     );

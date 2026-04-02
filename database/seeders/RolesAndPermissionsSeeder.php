@@ -142,6 +142,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'view media',
                 'upload media',
                 'delete own media',
+                'view trailer loaded reports',
             ],
         ];
 
