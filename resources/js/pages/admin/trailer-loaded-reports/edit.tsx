@@ -6,8 +6,8 @@ import {
     Plus,
     Trash2,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import * as React from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/tooltip';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
-import { index, show, update } from '@/routes/admin/trailer-loaded-reports';
+import { show, update } from '@/routes/admin/trailer-loaded-reports';
 import type { BreadcrumbItem } from '@/types';
 
 type LoadItem = {

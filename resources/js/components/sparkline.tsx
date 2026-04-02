@@ -21,8 +21,21 @@ export default function Sparkline({
 }: SparklineProps) {
     if (!data || data.length < 2) {
         return (
-            <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className={className} style={style} aria-hidden>
-                <rect x="0" y={height / 2} width={width} height="1" className="fill-muted/40" />
+            <svg
+                width={width}
+                height={height}
+                viewBox={`0 0 ${width} ${height}`}
+                className={className}
+                style={style}
+                aria-hidden
+            >
+                <rect
+                    x="0"
+                    y={height / 2}
+                    width={width}
+                    height="1"
+                    className="fill-muted/40"
+                />
             </svg>
         );
     }
@@ -38,13 +51,28 @@ export default function Sparkline({
         return [x, y] as const;
     });
 
-    const linePath = points.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ');
+    const linePath = points
+        .map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`)
+        .join(' ');
     const areaPath = `${linePath} L ${width} ${height} L 0 ${height} Z`;
 
     return (
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className={className} style={style} aria-hidden>
+        <svg
+            width={width}
+            height={height}
+            viewBox={`0 0 ${width} ${height}`}
+            className={className}
+            style={style}
+            aria-hidden
+        >
             <path d={areaPath} className={areaClassName} />
-            <path d={linePath} className={`${strokeClassName} fill-none`} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            <path
+                d={linePath}
+                className={`${strokeClassName} fill-none`}
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+            />
         </svg>
     );
 }

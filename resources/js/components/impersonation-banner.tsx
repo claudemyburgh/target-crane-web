@@ -2,7 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import { AlertCircle, X } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-import {stop}from "@/routes/admin/impersonate"
+import { stop } from '@/routes/admin/impersonate';
 import type { Auth } from '@/types';
 export function ImpersonationBanner() {
     const page = usePage();

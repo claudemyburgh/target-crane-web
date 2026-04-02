@@ -17,8 +17,8 @@ import {
     UserPlus,
     X,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import * as React from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -656,7 +656,7 @@ export default function AdminUsersIndex({
                 <div className="mb-3 flex flex-wrap items-end gap-2">
                     {/* Search */}
                     <div className="relative">
-                        <Search className="text-muted-foreground pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2" />
+                        <Search className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             className="h-9 w-72 pl-8"
                             placeholder="Search name or email"
@@ -869,7 +869,7 @@ export default function AdminUsersIndex({
                             localFilters.status === 'all') &&
                         (localFilters.email_verified === '' ||
                             localFilters.email_verified === 'all') && (
-                            <span className="text-muted-foreground text-sm">
+                            <span className="text-sm text-muted-foreground">
                                 No active filters
                             </span>
                         )}
@@ -1219,7 +1219,7 @@ export default function AdminUsersIndex({
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-3">
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                             This action will soft-delete the user. You can
                             restore them later.
                         </p>
@@ -1281,7 +1281,7 @@ export default function AdminUsersIndex({
                         </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-3">
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                             This action will soft-delete the selected users. You
                             can restore them later.
                         </p>

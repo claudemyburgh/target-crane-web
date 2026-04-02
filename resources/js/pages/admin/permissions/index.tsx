@@ -1,31 +1,20 @@
 import { Head, router } from '@inertiajs/react';
-import { toast } from 'sonner';
 import * as React from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes/admin';
-import { index, store } from '@/routes/admin/permissions';
+import { index } from '@/routes/admin/permissions';
 import type { BreadcrumbItem } from '@/types';
 
 export default function PermissionsIndex({
     permissions,
     filters,
-    can,
 }: {
     permissions: any;
     filters: any;
-    can: any;
 }) {
     const [search, setSearch] = React.useState(filters?.search ?? '');
 
@@ -87,7 +76,7 @@ export default function PermissionsIndex({
                                 <tr>
                                     <td
                                         colSpan={3}
-                                        className="text-muted-foreground px-4 py-8 text-center"
+                                        className="px-4 py-8 text-center text-muted-foreground"
                                     >
                                         No permissions found
                                     </td>
@@ -96,7 +85,7 @@ export default function PermissionsIndex({
                                 permissions.data.map((perm: any) => (
                                     <tr
                                         key={perm.id}
-                                        className="hover:bg-muted/50 border-t"
+                                        className="border-t hover:bg-muted/50"
                                     >
                                         <td className="px-4 py-3">
                                             <span className="font-mono text-sm">
@@ -104,12 +93,12 @@ export default function PermissionsIndex({
                                             </span>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <span className="text-muted-foreground text-sm">
+                                            <span className="text-sm text-muted-foreground">
                                                 {perm.guard_name}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <span className="text-muted-foreground text-sm">
+                                            <span className="text-sm text-muted-foreground">
                                                 {new Date(
                                                     perm.created_at,
                                                 ).toLocaleDateString()}

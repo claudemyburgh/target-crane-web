@@ -1,12 +1,12 @@
 import { Head, Link, useForm } from '@inertiajs/react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
-import { index as trailersIndex, show, update } from '@/routes/admin/trailers';
+import { index as trailersIndex, update } from '@/routes/admin/trailers';
 import type { BreadcrumbItem } from '@/types';
 
 interface Props {

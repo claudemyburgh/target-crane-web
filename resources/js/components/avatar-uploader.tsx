@@ -36,8 +36,8 @@ export function AvatarUploader({
     // In admin mode, only use the provided user's avatar; never fall back to auth user.
     // In self mode, fall back to the authenticated user's avatar.
     const avatarUrl = isAdminMode
-        ? currentAvatarUrl ?? undefined
-        : currentAvatarUrl ?? user?.avatar_url ?? user?.avatar ?? undefined;
+        ? (currentAvatarUrl ?? undefined)
+        : (currentAvatarUrl ?? user?.avatar_url ?? user?.avatar ?? undefined);
 
     const name = userName ?? user?.name ?? 'User';
     const upload_url = uploadUrl ?? ProfileController.uploadAvatar().url;
@@ -89,12 +89,16 @@ export function AvatarUploader({
         formData.append('avatar', file);
 
         // Use fetch to receive JSON with avatar_url for immediate UI update
-        const csrf = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.content;
+        const csrf = (
+            document.querySelector(
+                'meta[name="csrf-token"]',
+            ) as HTMLMetaElement | null
+        )?.content;
         fetch(upload_url, {
             method: 'POST',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}),
             },
             body: formData,
@@ -108,8 +112,8 @@ export function AvatarUploader({
                 return res.json();
             })
             .then((data: any) => {
-            // Note: progress handled by dropzone UX; fetch doesn't provide percent easily
-            
+                // Note: progress handled by dropzone UX; fetch doesn't provide percent easily
+
                 setUploading(false);
                 setProgress(0);
                 setPreview(null);
@@ -140,12 +144,16 @@ export function AvatarUploader({
 
     const handleDeleteAvatar = async () => {
         setDeleting(true);
-        const csrf = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.content;
+        const csrf = (
+            document.querySelector(
+                'meta[name="csrf-token"]',
+            ) as HTMLMetaElement | null
+        )?.content;
         fetch(delete_url, {
             method: 'DELETE',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
+                Accept: 'application/json',
                 ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}),
             },
             credentials: 'same-origin',
@@ -157,7 +165,7 @@ export function AvatarUploader({
                 }
                 return res.json();
             })
-            .then((data: any) => {
+            .then(() => {
                 setDeleting(false);
                 setPreview(null);
                 setServerAvatarUrl(null);
@@ -177,8 +185,14 @@ export function AvatarUploader({
     };
 
     const effectiveUrl = serverAvatarUrl ?? avatarUrl ?? undefined;
-    const displayUrl = preview ?? (effectiveUrl ? `${effectiveUrl}${effectiveUrl.includes('?') ? '&' : '?'}v=${cacheBuster}` : undefined);
-    const hasAvatar = Boolean((isAdminMode ? currentAvatarUrl : avatarUrl) && !preview);
+    const displayUrl =
+        preview ??
+        (effectiveUrl
+            ? `${effectiveUrl}${effectiveUrl.includes('?') ? '&' : '?'}v=${cacheBuster}`
+            : undefined);
+    const hasAvatar = Boolean(
+        (isAdminMode ? currentAvatarUrl : avatarUrl) && !preview,
+    );
 
     return (
         <div className="flex items-center gap-4">

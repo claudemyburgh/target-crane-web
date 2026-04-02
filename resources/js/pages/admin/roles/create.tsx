@@ -194,7 +194,7 @@ export default function RoleCreate({
                             <h3 className="text-lg font-semibold">
                                 Permissions
                             </h3>
-                            <div className="text-muted-foreground text-sm">
+                            <div className="text-sm text-muted-foreground">
                                 {selectedPermissions.length} of{' '}
                                 {permissions.length} selected
                             </div>
@@ -207,11 +207,11 @@ export default function RoleCreate({
                                 className={`flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
                                     activeTab === 'web'
                                         ? 'border-primary text-primary'
-                                        : 'text-muted-foreground hover:text-foreground border-transparent'
+                                        : 'border-transparent text-muted-foreground hover:text-foreground'
                                 }`}
                             >
                                 Web
-                                <span className="bg-muted rounded-full px-2 py-0.5 text-xs">
+                                <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
                                     {getSelectedCountForTab('web')}/
                                     {webPermissions.length}
                                 </span>
@@ -222,11 +222,11 @@ export default function RoleCreate({
                                 className={`flex items-center gap-2 border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
                                     activeTab === 'api'
                                         ? 'border-primary text-primary'
-                                        : 'text-muted-foreground hover:text-foreground border-transparent'
+                                        : 'border-transparent text-muted-foreground hover:text-foreground'
                                 }`}
                             >
                                 API
-                                <span className="bg-muted rounded-full px-2 py-0.5 text-xs">
+                                <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
                                     {getSelectedCountForTab('api')}/
                                     {apiPermissions.length}
                                 </span>
@@ -247,7 +247,7 @@ export default function RoleCreate({
                         </div>
 
                         {Object.keys(groupedPermissions).length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-sm text-muted-foreground">
                                 No permissions available
                             </p>
                         ) : (
@@ -273,7 +273,7 @@ export default function RoleCreate({
                                                 }
                                             >
                                                 <CollapsibleTrigger asChild>
-                                                    <div className="bg-muted/50 hover:bg-muted flex cursor-pointer items-center justify-between rounded-md border p-3">
+                                                    <div className="flex cursor-pointer items-center justify-between rounded-md border bg-muted/50 p-3 hover:bg-muted">
                                                         <div className="flex items-center gap-3">
                                                             {openGroups.includes(
                                                                 group,
@@ -287,7 +287,7 @@ export default function RoleCreate({
                                                                     group,
                                                                 )}
                                                             </span>
-                                                            <span className="text-muted-foreground text-sm">
+                                                            <span className="text-sm text-muted-foreground">
                                                                 ({perms.length})
                                                             </span>
                                                         </div>
@@ -311,7 +311,7 @@ export default function RoleCreate({
                                                         {perms.map((perm) => (
                                                             <label
                                                                 key={perm.id}
-                                                                className="hover:bg-muted/50 flex cursor-pointer items-center gap-2 rounded p-2"
+                                                                className="flex cursor-pointer items-center gap-2 rounded p-2 hover:bg-muted/50"
                                                             >
                                                                 <Checkbox
                                                                     checked={selectedPermissions.includes(

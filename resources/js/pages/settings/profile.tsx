@@ -36,7 +36,6 @@ export default function Profile({
 
             <h1 className="sr-only">Profile settings</h1>
 
-
             {/*<Separator />*/}
 
             <SettingsLayout>

@@ -2,19 +2,17 @@ import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import {
     ChevronsLeft,
-    ChevronsRight,
     Eye,
     MoreVertical,
     Pencil,
     Plus,
-    RotateCcw,
     Search,
     Shield,
     Trash2,
     X,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import * as React from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -125,7 +123,7 @@ export default function RolesIndex({
                 header: 'Name',
                 cell: ({ row }) => (
                     <div className="flex items-center gap-2">
-                        <Shield className="text-muted-foreground h-4 w-4" />
+                        <Shield className="h-4 w-4 text-muted-foreground" />
                         <span className="font-medium capitalize">
                             {row.original.name}
                         </span>
@@ -323,7 +321,7 @@ export default function RolesIndex({
 
                 <div className="mb-3 flex flex-wrap items-end gap-2">
                     <div className="relative">
-                        <Search className="text-muted-foreground pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2" />
+                        <Search className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             className="h-9 w-72 pl-8"
                             placeholder="Search roles"
@@ -591,13 +589,13 @@ export default function RolesIndex({
                     onClick={() => setConfirmDelete(null)}
                 >
                     <div
-                        className="bg-background w-full max-w-md rounded-lg p-6 shadow-lg"
+                        className="w-full max-w-md rounded-lg bg-background p-6 shadow-lg"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h3 className="mb-2 text-lg font-semibold">
                             Delete Role
                         </h3>
-                        <p className="text-muted-foreground mb-4">
+                        <p className="mb-4 text-muted-foreground">
                             Are you sure you want to delete the role "
                             {confirmDelete.name}"? This action cannot be undone.
                         </p>

@@ -1,10 +1,7 @@
 import type { SVGAttributes } from 'react';
-import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
-
-
     return (
         <svg
             {...props}
@@ -18,7 +15,6 @@ export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
                 props.className,
             )}
         >
-
             <path
                 d="M.1 23.1c0 3.8 3 6.8 6.8 6.8h20.4l5.3 5.3v23.2c0 3.7 3 6.8 6.8 6.8s6.8-3 6.8-6.8v-26c0-1.9-.8-3.7-2.1-4.9h-.2v-.1l-9.1-9.1c-1.4-1.4-3.1-2-4.9-2h-23c-3.7 0-6.8 3-6.8 6.8"
                 className="fill-target"

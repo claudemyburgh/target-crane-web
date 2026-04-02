@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { format } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import {
     ArrowLeft,
     CalendarDays,
@@ -171,6 +171,17 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
 
     const handleDownloadReport = () => {
         if (!dateRange?.from || !dateRange?.to) return;
+
+        const diffTime = Math.abs(
+            dateRange.to.getTime() - dateRange.from.getTime(),
+        );
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        if (diffDays > 90) {
+            toast.error('Date range cannot exceed 90 days');
+            return;
+        }
+
         const startDate = format(dateRange.from, 'yyyy-MM-dd');
         const endDate = format(dateRange.to, 'yyyy-MM-dd');
         window.location.href = pdf({
@@ -353,6 +364,8 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
                                 selected={dateRange}
                                 onSelect={setDateRange}
                                 numberOfMonths={2}
+                                defaultMonth={subMonths(new Date(), 1)}
+                                disabled={(date) => date > new Date()}
                             />
                         </div>
                         <div className="flex justify-end gap-2">

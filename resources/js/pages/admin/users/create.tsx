@@ -32,11 +32,6 @@ export default function AdminUsersCreate({ roles = [] }: { roles: string[] }) {
         e.preventDefault();
         form.submit(store(), {
             preserveScroll: true,
-            onSuccess: (page) => {
-                // If the backend redirects to edit route (it does), we're done.
-                // But if not, we can manually redirect using the created user from props.
-                // This is a safe noop because controller already redirects to edit.
-            },
         });
     };
 
@@ -146,7 +141,6 @@ export default function AdminUsersCreate({ roles = [] }: { roles: string[] }) {
                             </div>
                         )}
                     </div>
-
 
                     <div className="flex justify-end gap-2">
                         <Button type="submit" disabled={form.processing}>

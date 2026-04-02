@@ -1,7 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
 import * as React from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -140,7 +140,7 @@ export default function PermissionShow({
                             {permission.roles.length})
                         </h3>
                         {permission.roles.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-sm text-muted-foreground">
                                 No roles have this permission
                             </p>
                         ) : (
@@ -162,13 +162,13 @@ export default function PermissionShow({
                     onClick={() => setConfirmDelete(false)}
                 >
                     <div
-                        className="bg-background w-full max-w-md rounded-lg p-6 shadow-lg"
+                        className="w-full max-w-md rounded-lg bg-background p-6 shadow-lg"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <h3 className="mb-2 text-lg font-semibold">
                             Delete Permission
                         </h3>
-                        <p className="text-muted-foreground mb-4">
+                        <p className="mb-4 text-muted-foreground">
                             Are you sure you want to delete the permission "
                             {permission.name}"? This action cannot be undone.
                         </p>

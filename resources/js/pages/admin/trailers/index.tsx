@@ -14,8 +14,8 @@ import {
     Truck,
     X,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import * as React from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

@@ -10,8 +10,9 @@ import {
     Truck,
     X,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import * as React from 'react';
+import { toast } from 'sonner';
+import StatSimple from '@/components/stats/stat-simple';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,7 +30,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import StatSimple from '@/components/stats/stat-simple';
 import {
     Table,
     TableBody,

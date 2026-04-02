@@ -1,22 +1,15 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
 import * as React from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes/admin';
-import {
-    index,
-    edit,
-    show,
-    destroy,
-    update as updateRoute,
-} from '@/routes/admin/permissions';
+import { index, show, update as updateRoute } from '@/routes/admin/permissions';
 import type { BreadcrumbItem } from '@/types';
 
 export default function PermissionEdit({

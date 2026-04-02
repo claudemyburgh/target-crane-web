@@ -48,7 +48,12 @@ export const usePaginationStore = create<PaginationPrefsState>()(
 function normalizePath(path: string): string {
     try {
         // If a full URL is given, strip query string and hash.
-        const url = new URL(path, typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+        const url = new URL(
+            path,
+            typeof window !== 'undefined'
+                ? window.location.origin
+                : 'http://localhost',
+        );
         return url.pathname.replace(/\/$/, '') || '/';
     } catch {
         // If not a full URL, treat it as a path and just strip trailing slash.

@@ -31,7 +31,9 @@ export default function AdminDashboard({
     stats?: {
         users: number;
         users_series?: UsersSeries;
-        active_users?: { value: number; series: number[]; trend_percent: number } | undefined;
+        active_users?:
+            | { value: number; series: number[]; trend_percent: number }
+            | undefined;
         roles: number;
         roles_series?: UsersSeries;
         permissions: number;
@@ -47,40 +49,57 @@ export default function AdminDashboard({
                         title="Users"
                         value={stats.users}
                         icon={Users}
-                        trend={stats.users_series ? {
-                            value: stats.users_series.trend_percent,
-                            label: "vs last 14 days"
-                        } : undefined}
+                        trend={
+                            stats.users_series
+                                ? {
+                                      value: stats.users_series.trend_percent,
+                                      label: 'vs last 14 days',
+                                  }
+                                : undefined
+                        }
                     />
 
                     <StatSimple
                         title="Active Users"
                         value={stats.active_users?.value ?? 0}
                         icon={Activity}
-                        trend={stats.active_users ? {
-                            value: stats.active_users.trend_percent,
-                            label: "vs last 14 days"
-                        } : undefined}
+                        trend={
+                            stats.active_users
+                                ? {
+                                      value: stats.active_users.trend_percent,
+                                      label: 'vs last 14 days',
+                                  }
+                                : undefined
+                        }
                     />
 
                     <StatSimple
                         title="Roles"
                         value={stats.roles}
                         icon={Shield}
-                        trend={stats.roles_series ? {
-                            value: stats.roles_series.trend_percent,
-                            label: "vs last 14 days"
-                        } : undefined}
+                        trend={
+                            stats.roles_series
+                                ? {
+                                      value: stats.roles_series.trend_percent,
+                                      label: 'vs last 14 days',
+                                  }
+                                : undefined
+                        }
                     />
 
                     <StatSimple
                         title="Permissions"
                         value={stats.permissions}
                         icon={KeyRound}
-                        trend={stats.permissions_series ? {
-                            value: stats.permissions_series.trend_percent,
-                            label: "vs last 14 days"
-                        } : undefined}
+                        trend={
+                            stats.permissions_series
+                                ? {
+                                      value: stats.permissions_series
+                                          .trend_percent,
+                                      label: 'vs last 14 days',
+                                  }
+                                : undefined
+                        }
                     />
                 </div>
                 <div className="relative min-h-[100vh] flex-1 overflow-hidden rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border">

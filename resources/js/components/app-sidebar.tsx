@@ -1,8 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
-    BookOpen,
     ChevronsUpDown,
-    FolderGit2,
     Gauge,
     Key,
     LayoutGrid,
@@ -137,7 +135,7 @@ export function AppSidebar() {
                                         }
                                         sideOffset={4}
                                     >
-                                        <DropdownMenuLabel className="text-muted-foreground text-xs">
+                                        <DropdownMenuLabel className="text-xs text-muted-foreground">
                                             Switch Navigation
                                         </DropdownMenuLabel>
                                         <DropdownMenuItem asChild>

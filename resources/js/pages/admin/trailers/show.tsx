@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeft, Calendar, Hash, Pencil, Trash2, Truck } from 'lucide-react';
+import { Calendar, Hash, Pencil, Trash2, Truck } from 'lucide-react';
 import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';

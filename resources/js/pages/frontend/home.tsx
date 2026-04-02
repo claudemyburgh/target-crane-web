@@ -1,16 +1,13 @@
-import FrontendLayout from '@/layouts/frontend-layout';
-
 // Import all images from resources/images
-import heroImage from '@/../images/455953670_457748863915904_4005894369628636547_n.jpg';
 import aboutImage from '@/../images/455128947_453920860965371_2221904459537108085_n.jpg';
+import heroImage from '@/../images/455953670_457748863915904_4005894369628636547_n.jpg';
 import constructionImage from '@/../images/construction.jpg';
 import energyPowerImage from '@/../images/energy-power.jpg';
-import miningImage from '@/../images/mining.jpg';
 import manufacturingImage from '@/../images/manufacturing.jpg';
+import miningImage from '@/../images/mining.jpg';
 import portsImage from '@/../images/ports.jpg';
 import telecommunicationsImage from '@/../images/telecommunications.jpg';
-import fileLogo from '@/../images/file-logo.png';
-import logoSvg from '@/../images/Target-Cranes-Logo.svg';
+import FrontendLayout from '@/layouts/frontend-layout';
 
 const industries = [
     {
@@ -110,10 +107,10 @@ export default function Home() {
                                 alt="Target Cranes team"
                                 className="h-full w-full object-cover"
                             />
-                            <div className="absolute -bottom-6 -right-6 h-24 w-24 rounded bg-red-500" />
+                            <div className="absolute -right-6 -bottom-6 h-24 w-24 rounded bg-red-500" />
                         </div>
                         <div>
-                            <span className="mb-2 inline-block text-sm font-semibold uppercase tracking-wider text-red-500">
+                            <span className="mb-2 inline-block text-sm font-semibold tracking-wider text-red-500 uppercase">
                                 Who we are
                             </span>
                             <h2 className="mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
@@ -139,7 +136,7 @@ export default function Home() {
             <section className="bg-gray-50 py-16 md:py-24">
                 <div className="mx-auto max-w-7xl px-4 md:px-6">
                     <div className="mb-12 text-center">
-                        <span className="mb-2 inline-block text-sm font-semibold uppercase tracking-wider text-red-500">
+                        <span className="mb-2 inline-block text-sm font-semibold tracking-wider text-red-500 uppercase">
                             Industries
                         </span>
                         <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
@@ -169,7 +166,7 @@ export default function Home() {
                                         {industry.title}
                                     </p>
                                 </div>
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                                <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent p-4">
                                     <p className="text-sm font-medium text-white">
                                         {industry.title}
                                     </p>
@@ -192,7 +189,7 @@ export default function Home() {
                 <div className="relative mx-auto max-w-7xl px-4 md:px-6">
                     <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
                         <div>
-                            <span className="mb-2 inline-block text-sm font-semibold uppercase tracking-wider text-red-500">
+                            <span className="mb-2 inline-block text-sm font-semibold tracking-wider text-red-500 uppercase">
                                 Emergency
                             </span>
                             <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl">
@@ -234,7 +231,7 @@ export default function Home() {
                 <div className="mx-auto max-w-7xl px-4 md:px-6">
                     <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
                         <div>
-                            <span className="mb-2 inline-block text-sm font-semibold uppercase tracking-wider text-red-500">
+                            <span className="mb-2 inline-block text-sm font-semibold tracking-wider text-red-500 uppercase">
                                 Our Services
                             </span>
                             <h2 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
@@ -273,7 +270,7 @@ export default function Home() {
                                 className="h-full w-full object-cover"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent" />
-                            <div className="absolute bottom-6 left-6 right-6">
+                            <div className="absolute right-6 bottom-6 left-6">
                                 <p className="text-lg font-semibold text-white">
                                     Professional crane solutions since 1999
                                 </p>
@@ -305,12 +302,12 @@ export default function Home() {
             {/* Stats */}
             <section className="relative overflow-hidden bg-gray-900 py-16 md:py-24">
                 <div className="absolute inset-0 opacity-10">
-                    <div className="absolute left-10 top-10 h-32 w-32 rounded-full bg-red-500" />
-                    <div className="absolute bottom-10 right-10 h-48 w-48 rounded-full bg-red-500" />
+                    <div className="absolute top-10 left-10 h-32 w-32 rounded-full bg-red-500" />
+                    <div className="absolute right-10 bottom-10 h-48 w-48 rounded-full bg-red-500" />
                 </div>
                 <div className="relative mx-auto max-w-7xl px-4 md:px-6">
                     <div className="mb-12 text-center">
-                        <span className="mb-2 inline-block text-sm font-semibold uppercase tracking-wider text-red-500">
+                        <span className="mb-2 inline-block text-sm font-semibold tracking-wider text-red-500 uppercase">
                             Why Choose Us
                         </span>
                         <h2 className="text-3xl font-bold text-white md:text-4xl">

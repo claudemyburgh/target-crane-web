@@ -18,8 +18,8 @@ export function AppShell({ children, variant = 'header' }: Props) {
     }
 
     return (
-    <SidebarProvider open={isOpen} onOpenChange={setOpen}>
-      {children}
-    </SidebarProvider>
-  );
+        <SidebarProvider open={isOpen} onOpenChange={setOpen}>
+            {children}
+        </SidebarProvider>
+    );
 }

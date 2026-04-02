@@ -147,6 +147,14 @@ class TrailerLoadedReportController extends Controller
         $endDate = $request->input('end_date');
 
         if ($startDate && $endDate) {
+            $start = Carbon::parse($startDate);
+            $end = Carbon::parse($endDate);
+            $days = (int) $start->diffInDays($end) + 1;
+
+            if ($days > 90) {
+                abort(400, 'Date range cannot exceed 90 days');
+            }
+
             return $this->generateRangePdfWithDates($startDate, $endDate);
         }
 
@@ -386,7 +394,6 @@ class TrailerLoadedReportController extends Controller
             'dateRange' => $startDate->format('d M Y').' - '.$endDate->format('d M Y'),
             'daysData' => $daysData,
         ])
-            ->landscape()
             ->name('trailer-report-'.$days.'-days-'.$endDate->format('Y-m-d').'.pdf')
             ->download();
     }

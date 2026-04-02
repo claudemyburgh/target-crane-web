@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
-import { toast } from 'sonner';
 import * as React from 'react';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,7 +62,7 @@ export default function PermissionCreate() {
                             placeholder="e.g., edit posts, delete users"
                             required
                         />
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                             Use lowercase with spaces (e.g., "view posts")
                         </p>
                     </div>
