@@ -8,6 +8,7 @@ use App\Mail\TrailerLoadedReportMail;
 use App\Models\Trailer;
 use App\Models\TrailerLoadedReport;
 use App\Models\User;
+use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
@@ -142,6 +143,13 @@ class TrailerLoadedReportController extends Controller
 
     public function pdfRange(Request $request)
     {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if ($startDate && $endDate) {
+            return $this->generateRangePdfWithDates($startDate, $endDate);
+        }
+
         $days = $request->integer('days', 7);
 
         if (! in_array($days, [7, 14, 30])) {
@@ -303,6 +311,24 @@ class TrailerLoadedReportController extends Controller
 
         $endDate = now()->subDay()->startOfDay();
         $startDate = $endDate->copy()->subDays($days - 1)->startOfDay();
+
+        return $this->buildRangePdf($startDate, $endDate, $days);
+    }
+
+    private function generateRangePdfWithDates(string $startDate, string $endDate)
+    {
+        $this->authorize('viewAny', TrailerLoadedReport::class);
+
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->startOfDay();
+
+        $days = (int) $start->diffInDays($end) + 1;
+
+        return $this->buildRangePdf($start, $end, $days);
+    }
+
+    private function buildRangePdf($startDate, $endDate, int $days)
+    {
 
         $reports = TrailerLoadedReport::whereBetween('date', [$startDate, $endDate])
             ->orderBy('date')

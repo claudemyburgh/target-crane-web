@@ -9,11 +9,13 @@ import {
     Plus,
     X,
 } from 'lucide-react';
-import { toast } from 'sonner';
 import * as React from 'react';
+import type { DateRange } from 'react-day-picker';
+import { toast } from 'sonner';
 import Heading from '@/components/heading';
 import StatSimple from '@/components/stats/stat-simple';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent } from '@/components/ui/card';
 import {
     Dialog,
@@ -83,6 +85,8 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
         null,
     );
     const [isDeleting, setIsDeleting] = React.useState(false);
+    const [dateRangeDialogOpen, setDateRangeDialogOpen] = React.useState(false);
+    const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
 
     const loadedCount = React.useMemo(
         () =>
@@ -165,6 +169,17 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
         );
     };
 
+    const handleDownloadReport = () => {
+        if (!dateRange?.from || !dateRange?.to) return;
+        const startDate = format(dateRange.from, 'yyyy-MM-dd');
+        const endDate = format(dateRange.to, 'yyyy-MM-dd');
+        window.location.href = pdf({
+            mergeQuery: { start_date: startDate, end_date: endDate },
+        }).url;
+        setDateRangeDialogOpen(false);
+        setDateRange(undefined);
+    };
+
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Admin', href: '/' },
         { title: 'Trailer Loaded Reports', href: '#' },
@@ -223,6 +238,14 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setDateRangeDialogOpen(true)}
+                        >
+                            <CalendarDays className="mr-2 h-4 w-4" />
+                            Custom Date
+                        </Button>
                         {can.create && (
                             <Link href={create()}>
                                 <Button size="sm">
@@ -305,6 +328,48 @@ export default function TrailerLoadedReportsIndex({ reports, can }: Props) {
                                 ) : (
                                     'Delete'
                                 )}
+                            </Button>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog
+                    open={dateRangeDialogOpen}
+                    onOpenChange={(open) => {
+                        setDateRangeDialogOpen(open);
+                        if (!open) setDateRange(undefined);
+                    }}
+                >
+                    <DialogContent
+                        className="w-full"
+                        style={{ width: '600px', maxWidth: '600px' }}
+                    >
+                        <DialogHeader>
+                            <DialogTitle>Download Report</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex justify-center py-4">
+                            <Calendar
+                                mode="range"
+                                selected={dateRange}
+                                onSelect={setDateRange}
+                                numberOfMonths={2}
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setDateRangeDialogOpen(false);
+                                    setDateRange(undefined);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleDownloadReport}
+                                disabled={!dateRange?.from || !dateRange?.to}
+                            >
+                                Download
                             </Button>
                         </div>
                     </DialogContent>
